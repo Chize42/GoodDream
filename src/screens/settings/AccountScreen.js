@@ -43,7 +43,8 @@ export default function AccountScreen({ navigation, route }) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          {/* 이 부분을 수정했습니다. */}
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
             <Image
               source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
               style={styles.headerIcon}
@@ -78,6 +79,7 @@ export default function AccountScreen({ navigation, route }) {
           <MenuItem text="탈퇴하기" isDelete onPress={handleDelete} />
         </View>
       </ScrollView>
+      <Toast />
     </SafeAreaView>
   );
 }

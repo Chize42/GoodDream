@@ -1,6 +1,9 @@
 // src/screens/HomeScreen.tsx
 import { Feather } from "@expo/vector-icons";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { auth, db } from "../../services/firebase"; // Firebase 설정 파일 경로
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   Dimensions,
   Image,
@@ -14,6 +17,53 @@ import {
 const { width } = Dimensions.get("window");
 
 function HomeScreen({ navigation }: { navigation: any }) {
+  const [username, setUsername] = useState("사용자"); // 기본값
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // Firestore에서 사용자 정보 가져오기
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUsername(userData.username || "사용자");
+          }
+        } catch (error) {
+          console.error("사용자 정보를 가져오는 중 오류:", error);
+          setUsername("사용자");
+        }
+      } //else {
+      //   // 로그인되지 않은 경우 로그인 화면으로 이동
+      //   navigation.replace("Login");
+      // }
+      setLoading(false);
+    });
+
+    // 컴포넌트 언마운트 시 리스너 정리
+    return () => unsubscribe();
+  }, [navigation]);
+
+  // 현재 날짜 포맷팅
+  const getCurrentDate = () => {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    };
+    return now.toLocaleDateString('en-US', options);
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.homeScreen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: 'white' }}>로딩 중...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.homeScreen}
@@ -22,8 +72,8 @@ function HomeScreen({ navigation }: { navigation: any }) {
       <View style={styles.homeContent}>
         <View style={styles.homeHeader}>
           <View>
-            <Text style={styles.welcomeText}>Welcome, Jacob</Text>
-            <Text style={styles.dateText}>02 Feb, 2023</Text>
+            <Text style={styles.welcomeText}>Welcome, {username}</Text>
+            <Text style={styles.dateText}>{getCurrentDate()}</Text>
           </View>
 
           <View style={styles.profileWrapper}>
@@ -35,7 +85,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
             </View>
             <TouchableOpacity
               style={styles.editButton}
-              onPress={() => navigation.navigate("Settings")} // React Navigation 방식으로 변경
+              onPress={() => navigation.navigate("Settings")}
             >
               <Feather name="edit-2" size={14} color="#2E4A7D" />
             </TouchableOpacity>
@@ -48,7 +98,6 @@ function HomeScreen({ navigation }: { navigation: any }) {
             <Text
               style={styles.seeMore}
               onPress={() => {
-                // 수면 추적 기능 추가 시
                 const today = new Date().toISOString().split("T")[0];
                 navigation.navigate("SleepReport", { initialDate: today });
               }}
@@ -77,7 +126,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
 
           <TouchableOpacity
             style={[styles.card, styles.orange]}
-            onPress={() => navigation.navigate("Music")} // React Navigation 방식으로 변경
+            onPress={() => navigation.navigate("Music")}
           >
             <Image
               source={require("../../../assets/soundOwl.png")}

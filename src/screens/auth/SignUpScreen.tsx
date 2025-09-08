@@ -1,6 +1,9 @@
 // src/screens/SignUpScreen.tsx
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../services/firebase"; // 파이어베이스 설정 파일 경로를 확인해주세요.
 import {
   Dimensions,
   Image,
@@ -75,11 +78,38 @@ function SignUpScreen({ navigation }: { navigation: any }) {
     }));
   };
 
-  const handleGetStarted = () => {
-    if (privacyChecked && passwordValidation.isValid && passwordsMatch) {
-      navigation.navigate("Home"); // React Navigation 방식으로 변경
+  const handleGetStarted = async () => {
+  if (privacyChecked && passwordValidation.isValid && passwordsMatch) {
+    try {
+      // 1. 파이어베이스 인증(Authentication)에 계정 생성
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      const user = userCredential.user;
+
+      // 2. Firestore에 추가 사용자 정보 저장
+      await setDoc(doc(db, "users", user.uid), {
+        username: formData.username,
+        email: formData.email,
+        age: formData.age,
+        gender: selectedGender,
+        phoneNumber: formData.phoneNumber,
+        createdAt: new Date(),
+      });
+
+      console.log("계정 생성 성공! 사용자 UID:", user.uid);
+      alert("회원가입이 완료되었습니다!"); // 사용자에게 성공 메시지 표시
+      navigation.navigate("Home"); // 성공 후 홈 화면으로 이동
+
+    } catch (error: any) {
+      // 에러 처리
+      console.error("회원가입 중 오류 발생:", error.message);
+      alert(`회원가입 실패: ${error.message}`);
     }
-  };
+  }
+};
 
   const isFormValid =
     privacyChecked &&
