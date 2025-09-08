@@ -9,6 +9,7 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
+  Image,
   Dimensions,
 } from "react-native";
 
@@ -116,7 +117,14 @@ export default function BubbleScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+          <Image
+            source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
+            style={styles.icon}
+          />
+        </TouchableOpacity>
+      </View>
       {bubbles.map((bubble) => (
         <TouchableOpacity
           key={bubble.id}
@@ -192,6 +200,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#121212",
     justifyContent: "flex-end",
+  },
+  header: {
+    position: "absolute",
+    top: 10,
+    left: 20,
+    zIndex: 10,
+    marginTop: 20,
+  },
+  icon: {
+    width: 24,
+    height: 24,
+    resizeMode: "contain",
   },
   bubbleWrapper: {
     position: "absolute",

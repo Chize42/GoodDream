@@ -18,7 +18,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
   const [completionModalVisible, setCompletionModalVisible] = useState(false);
   const [currentDay, setCurrentDay] = useState(1);
   const scrollViewRef = useRef(null);
-  const [owlLayoutY, setOwlLayoutY] = useState(0); 
+  const [owlLayoutY, setOwlLayoutY] = useState(0);
   const owlImg = "https://i.ibb.co/hxgqmQvL/image-1.png";
   const footprintImg = "https://i.ibb.co/xqYdhd5S/pngegg-1.png";
   const successOwlImg = "https://i.ibb.co/hJTLCHsf/Kakao-Talk-20250524-151947386-1.png";
@@ -27,18 +27,18 @@ export default function ChallengeStartScreen({ route, navigation }) {
     if (owlLayoutY > 0) {
       setTimeout(() => {
         const yOffset = owlLayoutY > 100 ? owlLayoutY - 100 : 0;
-        scrollViewRef.current?.scrollTo({ y: yOffset, animated: false });
-      }, 0); 
+        scrollViewRef.current?.scrollTo({ y: yOffset, animated: true });
+      }, 100);
     }
   }, [owlLayoutY]);
 
   const handleNextDay = () => {
+    if (currentDay > totalDays) return;
+
     const nextDay = currentDay + 1;
-    if (currentDay >= totalDays) return;
+    setCurrentDay(nextDay);
 
-    setCurrentDay(nextDay); 
-
-    if (nextDay >= totalDays) {
+    if (nextDay > totalDays) {
       setCompletionModalVisible(true);
     } else {
       setSuccessModalVisible(true);
@@ -47,39 +47,55 @@ export default function ChallengeStartScreen({ route, navigation }) {
 
   const renderChallengePath = () => {
     if (!totalDays || totalDays <= 0) {
-        return <Text style={styles.emptyText}>기간 없이 자유롭게 도전해요!</Text>;
-      }
-      return Array.from({ length: totalDays }, (_, i) => i + 1)
-        .reverse()
-        .map((day) => {
-          const isCompleted = day <= currentDay;
-          const isNextDay = day === currentDay + 1;
-          const isLeft = (totalDays - day) % 2 === 0;
-          return (
-            <View key={day}>
-              <View
-                style={isLeft ? styles.rowLeft : styles.rowRight}
-                onLayout={(event) => {
-                  if (isNextDay) {
-                    const layout = event.nativeEvent.layout;
-                    setOwlLayoutY(layout.y);
-                  }
-                }}
-              >
-                <View style={styles.circle}>
-                  {isCompleted ? <Image source={{ uri: footprintImg }} style={styles.footprint} />
-                   : isNextDay && (currentDay < totalDays) ? <Image source={{ uri: owlImg }} style={styles.owl} />
-                   : null}
-                </View>
+      return <Text style={styles.emptyText}>기간 없이 자유롭게 도전해요!</Text>;
+    }
+    return Array.from({ length: totalDays }, (_, i) => i + 1)
+      .reverse()
+      .map((day) => {
+        const isCompleted = day < currentDay;
+        const isCurrentDay = day === currentDay;
+        const isLeft = (totalDays - day) % 2 === 0;
+
+        return (
+          <View key={day} style={styles.dayContainer}>
+            {day > 1 && (
+              <View style={styles.dotPathContainer}>
+                {isLeft ? (
+                  <>
+                    <View style={[styles.dot, styles.dotL2R_1]} />
+                    <View style={[styles.dot, styles.dotL2R_2]} />
+                    <View style={[styles.dot, styles.dotL2R_3]} />
+                  </>
+                ) : (
+                  <>
+                    <View style={[styles.dot, styles.dotR2L_1]} />
+                    <View style={[styles.dot, styles.dotR2L_2]} />
+                    <View style={[styles.dot, styles.dotR2L_3]} />
+                  </>
+                )}
               </View>
-              {day > 1 && (
-                <View style={styles.dotRow}>
-                  {Array.from({ length: 3 }).map((_, i) => <View key={i} style={styles.dot} />)}
-                </View>
-              )}
+            )}
+
+            <View
+              style={[styles.circleContainer, isLeft ? styles.rowLeft : styles.rowRight]}
+              onLayout={(event) => {
+                if (isCurrentDay) {
+                  const layout = event.nativeEvent.layout;
+                  setOwlLayoutY(layout.y);
+                }
+              }}
+            >
+              <View style={styles.circle}>
+                {isCompleted ? (
+                  <Image source={{ uri: footprintImg }} style={styles.footprint} />
+                ) : isCurrentDay ? (
+                  <Image source={{ uri: owlImg }} style={styles.owl} />
+                ) : null}
+              </View>
             </View>
-          );
-        });
+          </View>
+        );
+      });
   };
 
   return (
@@ -96,7 +112,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
       <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.pathContainer}>
         {renderChallengePath()}
       </ScrollView>
-      
+
       <Text style={styles.streakText}>
         <Text style={styles.blueText}>{currentDay > totalDays ? totalDays : currentDay}</Text>일 연속 도전 중!
       </Text>
@@ -114,7 +130,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
                 <><Text style={styles.blueText}>{totalDays}</Text>일 챌린지 중이에요</>
               )}
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.resetButton}
               onPress={() => {
                 setInfoModalVisible(false);
@@ -165,7 +181,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
-      
+
       <TouchableOpacity style={styles.tempButton} onPress={handleNextDay}>
         <Text style={styles.tempButtonText}>하루 진행 (테스트용)</Text>
       </TouchableOpacity>
@@ -174,215 +190,243 @@ export default function ChallengeStartScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#19171C" 
+  container: {
+    flex: 1,
+    backgroundColor: "#19171C"
   },
-  header: { 
-    width: "100%", 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    paddingHorizontal: 20, 
-    paddingTop: 20, 
-    alignItems: "center", 
-    zIndex: 1 
-  },
-  infoBtn: { 
-    color: "#fff", 
-    fontSize: 26, 
-    fontWeight: "bold" 
+  header: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    alignItems: "center",
+    zIndex: 1
   },
   icon: {
     width: 24,
     height: 24,
   },
-  scrollView: { 
-    width: '100%' 
+  scrollView: {
+    width: '100%'
   },
-  pathContainer: { 
-    paddingTop: 20, 
-    paddingBottom: 100, 
-    alignItems: "center" 
+  pathContainer: {
+    paddingTop: 20,
+    paddingBottom: 100,
+    alignItems: "center"
   },
-  rowLeft: { 
-    alignSelf: "flex-start", 
-    marginLeft: 50 
+  dayContainer: {
+    width: '100%',
+    height: 100,
+    position: 'relative',
   },
-  rowRight: { 
-    alignSelf: "flex-end", 
-    marginRight: 50 
+  circleContainer: {
+    position: 'absolute',
+    top: 18,
   },
-  circle: { 
-    width: 64, 
-    height: 64, 
-    borderRadius: 32, 
-    backgroundColor: "#fff", 
-    justifyContent: "center", 
-    alignItems: "center", 
-    marginVertical: 18 
+  rowLeft: {
+    left: 50,
   },
-  footprint: { 
-    width: 42, 
-    height: 42, 
-    resizeMode: "contain" 
+  rowRight: {
+    right: 50,
   },
-  owl: { 
-    width: 64, 
-    height: 64, 
-    resizeMode: "contain" 
+  circle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  dotRow: { 
-    alignItems: "center", 
-    justifyContent: "center", 
-    marginVertical: 6 
+  footprint: {
+    width: 42,
+    height: 42,
+    resizeMode: "contain"
   },
-  dot: { 
-    width: 10, 
-    height: 10, 
-    borderRadius: 5, 
-    backgroundColor: "#fff", 
-    marginVertical: 4 
+  owl: {
+    width: 64,
+    height: 64,
+    resizeMode: "contain"
   },
-  streakText: { 
-    position: "absolute", 
-    bottom: 80, 
-    width: "100%", 
+  dotPathContainer: {
+    position: 'absolute',
+    top: 50,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#fff",
+    position: 'absolute',
+  },
+  dotL2R_1: {
+    top: '25%',
+    left: '40%',
+  },
+  dotL2R_2: {
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -4 }],
+  },
+  dotL2R_3: {
+    top: '75%',
+    left: '60%',
+  },
+  dotR2L_1: {
+    top: '25%',
+    right: '40%',
+  },
+  dotR2L_2: {
+    top: '50%',
+    right: '50%',
+    transform: [{ translateX: 4 }],
+  },
+  dotR2L_3: {
+    top: '75%',
+    right: '60%',
+  },
+  streakText: {
+    position: "absolute",
+    bottom: 80,
+    width: "100%",
     textAlign: "left",
-    paddingLeft: 30, 
-    fontSize: 20, 
-    color: "#fff", 
-    fontWeight: "600" 
+    paddingLeft: 30,
+    fontSize: 20,
+    color: "#fff",
+    fontWeight: "600"
   },
-  blueText: { 
-    color: "#4074D8", 
-    fontWeight: "bold" 
+  blueText: {
+    color: "#4074D8",
+    fontWeight: "bold"
   },
-  emptyText: { 
-    color: "#fff", 
-    fontSize: 18, 
-    marginTop: 50 
+  emptyText: {
+    color: "#fff",
+    fontSize: 18,
+    marginTop: 50
   },
-  modalBackground: { 
-    flex: 1, 
-    backgroundColor: "rgba(0,0,0,0.6)", 
-    justifyContent: "center", 
-    alignItems: "center" 
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center"
   },
-  infoModalContent: { 
-    backgroundColor: "#fff", 
-    borderRadius: 16, 
-    padding: 20, 
-    paddingTop: 30, 
-    width: '75%', 
-    alignItems: "center", 
-    position: "relative" 
+  infoModalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    paddingTop: 30,
+    width: '75%',
+    alignItems: "center",
+    position: "relative"
   },
-  closeBtn: { 
-    position: "absolute", 
-    top: 10, 
-    right: 16, 
-    zIndex: 2 
+  closeBtn: {
+    position: "absolute",
+    top: 10,
+    right: 16,
+    zIndex: 2
   },
-  closeText: { 
-    fontSize: 22, 
-    color: "#19171C", 
-    fontWeight: "bold" 
+  closeText: {
+    fontSize: 22,
+    color: "#19171C",
+    fontWeight: "bold"
   },
-  modalMainText: { 
-    fontSize: 21, 
-    color: "#19171C", 
-    marginBottom: 20, 
+  modalMainText: {
+    fontSize: 21,
+    color: "#19171C",
+    marginBottom: 20,
   },
-  resetButton: { 
-    borderTopWidth: 1, 
-    borderTopColor: '#eee', 
-    width: '100%', 
-    paddingTop: 10, 
-    alignItems: 'center' 
+  resetButton: {
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    width: '100%',
+    paddingTop: 10,
+    alignItems: 'center'
   },
-  resetButtonText: { 
-    color: '#D9534F', 
-    fontSize: 14 
+  resetButtonText: {
+    color: '#D9534F',
+    fontSize: 14
   },
-  successModalContent: { 
-    width: "75%", 
-    backgroundColor: "#fff", 
-    borderRadius: 16, 
-    padding: 20, 
-    alignItems: "center", 
-    position: "relative" 
+  successModalContent: {
+    width: "75%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    position: "relative"
   },
-  successOwlImg: { 
-    width: 80, 
-    height: 80, 
-    resizeMode: "contain", 
-    marginBottom: 10 
+  successOwlImg: {
+    width: 80,
+    height: 80,
+    resizeMode: "contain",
+    marginBottom: 10
   },
-  successTitle: { 
-    fontSize: 18, 
-    fontWeight: "bold", 
-    color: "#19171C", 
-    marginBottom: 4 
+  successTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#19171C",
+    marginBottom: 4
   },
-  successSubtitle: { 
-    fontSize: 14, 
-    color: "#555" 
+  successSubtitle: {
+    fontSize: 14,
+    color: "#555"
   },
-  tempButton: { 
-    position: 'absolute', 
-    bottom: 30, 
-    alignSelf: 'center', 
-    backgroundColor: '#4074D8', 
-    paddingVertical: 10, 
-    paddingHorizontal: 20, 
-    borderRadius: 20 
+  tempButton: {
+    position: 'absolute',
+    bottom: 30,
+    alignSelf: 'center',
+    backgroundColor: '#4074D8',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20
   },
-  tempButtonText: { 
-    color: '#fff', 
-    fontWeight: 'bold' 
+  tempButtonText: {
+    color: '#fff',
+    fontWeight: 'bold'
   },
-
-  completionModalContent: { 
-    width: '75%', 
-    backgroundColor: '#fff', 
-    borderRadius: 14, 
-    padding: 20, 
-    alignItems: 'center' 
+  completionModalContent: {
+    width: '75%',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 20,
+    alignItems: 'center'
   },
-  completionTitle: { 
-    fontSize: 17, 
-    fontWeight: 'bold', 
-    color: '#000', 
-    marginBottom: 4 
+  completionTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 4
   },
-  completionSubtitle: { 
-    fontSize: 13, 
-    color: '#000', 
-    marginBottom: 20 
+  completionSubtitle: {
+    fontSize: 13,
+    color: '#000',
+    marginBottom: 20
   },
-  completionButtonRow: { 
-    flexDirection: 'row', 
-    width: '100%' 
+  completionButtonRow: {
+    flexDirection: 'row',
+    width: '100%'
   },
-  completionButton: { 
-    flex: 1, 
-    paddingVertical: 12, 
-    borderTopWidth: 1, 
-    borderTopColor: '#EFEFEF' 
+  completionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EFEFEF'
   },
-  completionButtonNo: { 
-    borderRightWidth: 1, 
-    borderRightColor: '#EFEFEF' 
+  completionButtonNo: {
+    borderRightWidth: 1,
+    borderRightColor: '#EFEFEF'
   },
-  completionButtonTextNo: { 
-    color: '#D9534F', 
-    textAlign: 'center', 
-    fontSize: 17 
+  completionButtonTextNo: {
+    color: '#D9534F',
+    textAlign: 'center',
+    fontSize: 17
   },
-  completionButtonTextYes: { 
-    color: '#007AFF', 
-    textAlign: 'center', 
-    fontSize: 17, 
-    fontWeight: 'bold' 
+  completionButtonTextYes: {
+    color: '#007AFF',
+    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: 'bold'
   },
 });

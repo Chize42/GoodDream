@@ -72,6 +72,14 @@ export default function ChallengeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+          <Image
+            source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
+            style={styles.icon}
+          />
+        </TouchableOpacity>
+      </View>
       <View style={styles.content}>
         <Image
           source={{ uri: "https://i.ibb.co/JWnPXqxG/owl.png" }}
@@ -152,6 +160,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#111",
+  },
+  header: {
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    alignItems: "flex-start",
+    marginTop: 20,
+  },
+  icon: {
+    width: 24,
+    height: 24,
+    resizeMode: "contain",
   },
   content: {
     flex: 1,
