@@ -48,18 +48,23 @@ function HomeScreen({ navigation }: { navigation: any }) {
   // 현재 날짜 포맷팅
   const getCurrentDate = () => {
     const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    const options: Intl.DateTimeFormatOptions = {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     };
-    return now.toLocaleDateString('en-US', options);
+    return now.toLocaleDateString("en-US", options);
   };
 
   if (loading) {
     return (
-      <View style={[styles.homeScreen, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: 'white' }}>로딩 중...</Text>
+      <View
+        style={[
+          styles.homeScreen,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <Text style={{ color: "white" }}>로딩 중...</Text>
       </View>
     );
   }
@@ -114,7 +119,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
         <View style={styles.cardContainer}>
           <TouchableOpacity
             style={[styles.card, styles.purple]}
-            onPress={() => navigation.navigate("Alarm")}
+            onPress={() => navigation.navigate("SleepSchedule")}
           >
             <Image
               source={require("../../../assets/alramOwl.png")}
