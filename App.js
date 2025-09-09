@@ -32,11 +32,9 @@ import InquiryHistoryScreen from "./src/screens/settings/InquiryHistoryScreen";
 import AdvertisementInquiryScreen from "./src/screens/settings/AdvertisementInquiryScreen";
 import CompletedInquiryScreen from "./src/screens/settings/CompletedInquiryScreen";
 
-// Alarm 관련 화면들 추가
-import AlarmScreen from "./src/screens/alarm/AlarmScreen";
-import AlarmMessagesScreen from "./src/screens/alarm/AlarmMessagesScreen";
-import AddEditAlarmScreen from "./src/screens/alarm/AddEditAlarmScreen";
-import SelectSoundScreen from "./src/screens/alarm/SelectSoundScreen";
+// ScheduleAlarm 관련 화면들 추가
+import SleepScheduleScreen from "./src/screens/schedule/SleepScheduleScreen";
+import AddSleepScheduleScreen from "./src/screens/schedule/AddSleepScheduleScreen";
 
 // Challenge 관련 화면들 추가
 import ChallengeScreen from "./src/screens/challenge/ChallengeScreen";
@@ -90,11 +88,12 @@ export default function App() {
             name="광고 문의"
             component={AdvertisementInquiryScreen}
           />
-          {/* Alarm 관련 화면들 */}
-          <Stack.Screen name="Alarm" component={AlarmScreen} />
-          <Stack.Screen name="AlarmMessages" component={AlarmMessagesScreen} />
-          <Stack.Screen name="AddEditAlarm" component={AddEditAlarmScreen} />
-          <Stack.Screen name="SelectSound" component={SelectSoundScreen} />
+          {/* ScheduleAlarm 관련 화면들 */}
+          <Stack.Screen name="SleepSchedule" component={SleepScheduleScreen} />
+          <Stack.Screen
+            name="AddSleepSchedule"
+            component={AddSleepScheduleScreen}
+          />
           {/* Challenge 관련 화면들 */}
           <Stack.Screen name="Challenge" component={ChallengeScreen} />
           <Stack.Screen
