@@ -117,120 +117,6 @@ function StarBackground({ count = 40 }: StarBackgroundProps) {
 }
 
 /* ============================
-   별똥별 + 꼬리 효과
-============================ */
-function ShootingStar() {
-  const position = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const [isVisible, setIsVisible] = React.useState(false);
-
-  const createShootingStar = () => {
-    setIsVisible(true);
-    position.setValue(0);
-    opacity.setValue(1);
-
-    // 별똥별이 화면을 가로질러 이동
-    Animated.parallel([
-      Animated.timing(position, {
-        toValue: 1,
-        duration: 2000, // 2초 동안
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.delay(1500), // 1.5초 후부터 사라지기 시작
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start(() => {
-      setIsVisible(false);
-      // 3-6초 후에 다시 별똥별 생성
-      setTimeout(createShootingStar, Math.random() * 3000 + 3000);
-    });
-  };
-
-  useEffect(() => {
-    // 3초 후에 첫 번째 별똥별 시작
-    const timer = setTimeout(createShootingStar, 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isVisible) return null;
-
-  // 애니메이션 값을 실제 좌표로 변환
-  const translateX = position.interpolate({
-    inputRange: [0, 1],
-    outputRange: [width + 50, -150], // 오른쪽에서 왼쪽으로
-  });
-
-  const translateY = position.interpolate({
-    inputRange: [0, 1],
-    outputRange: [100, height - 200], // 위에서 아래로 대각선
-  });
-
-  return (
-    <Animated.View
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        transform: [{ translateX }, { translateY }],
-        opacity,
-        zIndex: 1000,
-      }}
-    >
-      {/* 별똥별 몸체 */}
-      <View
-        style={{
-          width: 60,
-          height: 4,
-          backgroundColor: "#FFD700", // 금색
-          borderRadius: 2,
-          shadowColor: "#FFD700",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 1,
-          shadowRadius: 10,
-          elevation: 10,
-        }}
-      />
-
-      {/* 별똥별 머리 (더 밝은 점) */}
-      <View
-        style={{
-          position: "absolute",
-          right: -3,
-          top: -1,
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: "#FFFFFF",
-          shadowColor: "#FFFFFF",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 1,
-          shadowRadius: 8,
-          elevation: 15,
-        }}
-      />
-    </Animated.View>
-  );
-}
-
-/* ============================
-   여러 개의 별똥별을 위한 컨테이너
-============================ */
-function ShootingStars() {
-  return (
-    <>
-      <ShootingStar />
-      <ShootingStar />
-      <ShootingStar />
-    </>
-  );
-}
-
-/* ============================
    메인 Intro 화면
 ============================ */
 function IntroScreen({ navigation }: { navigation: any }) {
@@ -246,7 +132,6 @@ function IntroScreen({ navigation }: { navigation: any }) {
     <View style={styles.introScreen}>
       {/* 배경 요소 */}
       <StarBackground count={50} />
-      <ShootingStars />
 
       <View style={styles.introContent}>
         <Text style={styles.introTitle}>Welcome to Dream</Text>
