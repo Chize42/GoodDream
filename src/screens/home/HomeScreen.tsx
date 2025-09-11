@@ -2,7 +2,14 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useState, useEffect } from "react";
 import { auth, db } from "../../services/firebase"; // Firebase 설정 파일 경로
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   Dimensions,
@@ -13,12 +20,87 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import WeekChart from "../../components/WeekChart";
 
 const { width } = Dimensions.get("window");
 
 function HomeScreen({ navigation }: { navigation: any }) {
   const [username, setUsername] = useState("사용자"); // 기본값
   const [loading, setLoading] = useState(true);
+  const [weekData, setWeekData] = useState([]);
+
+  // 이번 주 날짜 계산 함수
+  const getThisWeekDates = () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0(일요일) ~ 6(토요일)
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); // 월요일로 설정
+
+    const weekDates = [];
+    const dayNames = ["월", "화", "수", "목", "금", "토", "일"];
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      weekDates.push({
+        date: date.toISOString().split("T")[0], // YYYY-MM-DD 형식
+        dayName: dayNames[i],
+        data: null, // 초기값
+      });
+    }
+
+    return weekDates;
+  };
+
+  // Firebase에서 수면 데이터 가져오기
+  const fetchWeekSleepData = async (userId: string) => {
+    try {
+      const weekDates = getThisWeekDates();
+      const updatedWeekData = [];
+
+      for (const dayInfo of weekDates) {
+        try {
+          // 해당 날짜의 수면 데이터 조회
+          const sleepQuery = query(
+            collection(db, "sleepRecords"),
+            where("userId", "==", userId),
+            where("date", "==", dayInfo.date)
+          );
+
+          const querySnapshot = await getDocs(sleepQuery);
+
+          if (!querySnapshot.empty) {
+            const sleepData = querySnapshot.docs[0].data();
+            updatedWeekData.push({
+              ...dayInfo,
+              data: {
+                score: sleepData.sleepScore || 0, // 수면 점수
+                duration: sleepData.sleepDuration || 0, // 수면 시간
+              },
+            });
+          } else {
+            // 데이터가 없는 경우
+            updatedWeekData.push({
+              ...dayInfo,
+              data: null,
+            });
+          }
+        } catch (error) {
+          console.error(`${dayInfo.date} 데이터 조회 오류:`, error);
+          updatedWeekData.push({
+            ...dayInfo,
+            data: null,
+          });
+        }
+      }
+
+      setWeekData(updatedWeekData);
+    } catch (error) {
+      console.error("주간 수면 데이터 조회 오류:", error);
+      // 오류 발생 시 빈 데이터로 설정
+      setWeekData(getThisWeekDates());
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -30,14 +112,19 @@ function HomeScreen({ navigation }: { navigation: any }) {
             const userData = userDoc.data();
             setUsername(userData.username || "사용자");
           }
+
+          // 주간 수면 데이터 가져오기
+          await fetchWeekSleepData(user.uid);
         } catch (error) {
           console.error("사용자 정보를 가져오는 중 오류:", error);
           setUsername("사용자");
+          // 오류 발생 시에도 빈 차트 표시
+          setWeekData(getThisWeekDates());
         }
-      } //else {
-      //   // 로그인되지 않은 경우 로그인 화면으로 이동
-      //   navigation.replace("Login");
-      // }
+      } else {
+        // 로그인되지 않은 경우 빈 데이터
+        setWeekData(getThisWeekDates());
+      }
       setLoading(false);
     });
 
@@ -48,18 +135,23 @@ function HomeScreen({ navigation }: { navigation: any }) {
   // 현재 날짜 포맷팅
   const getCurrentDate = () => {
     const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    const options: Intl.DateTimeFormatOptions = {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     };
-    return now.toLocaleDateString('en-US', options);
+    return now.toLocaleDateString("en-US", options);
   };
 
   if (loading) {
     return (
-      <View style={[styles.homeScreen, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: 'white' }}>로딩 중...</Text>
+      <View
+        style={[
+          styles.homeScreen,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <Text style={{ color: "white" }}>로딩 중...</Text>
       </View>
     );
   }
@@ -108,13 +200,13 @@ function HomeScreen({ navigation }: { navigation: any }) {
         </View>
 
         <View style={styles.chartBox}>
-          <Text style={styles.barChartPlaceholder}>[Bar Chart]</Text>
+          <WeekChart weekData={weekData} />
         </View>
 
         <View style={styles.cardContainer}>
           <TouchableOpacity
             style={[styles.card, styles.purple]}
-            onPress={() => navigation.navigate("Alarm")}
+            onPress={() => navigation.navigate("SleepSchedule")}
           >
             <Image
               source={require("../../../assets/alramOwl.png")}
@@ -246,12 +338,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   chartBox: {
-    backgroundColor: "#1e1e35",
+    backgroundColor: "#1D1B20",
     borderRadius: 12,
-    height: 300,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 16,
     marginBottom: 20,
+    minHeight: 200,
   },
   barChartPlaceholder: {
     color: "#777",
