@@ -1,7 +1,9 @@
 // src/components/WeekChart.js
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { colors, typography } from "../styles/globalStyles";
+import * as GlobalStyles from "../styles/globalStyles";
+
+const { colors, spacing, typography } = GlobalStyles;
 
 const WeekChart = ({ weekData }) => {
   const yAxisLabels = [100, 90, 80, 70, 60]; // 위에서 아래로
@@ -69,17 +71,17 @@ const WeekChart = ({ weekData }) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 16,
+    paddingTop: spacing.lg,
   },
   chartContainer: {
     flexDirection: "row",
     height: 120,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   yAxisContainer: {
     width: 40,
     justifyContent: "space-between",
-    paddingRight: 8,
+    paddingRight: spacing.sm,
   },
   yAxisLabelContainer: {
     height: 20,
@@ -112,7 +114,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     height: "100%",
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
   },
   barContainer: {
     flex: 1,
