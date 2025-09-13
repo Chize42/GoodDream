@@ -5,7 +5,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 
 // MusicProvider import 추가
-import { MusicProvider } from "./contexts/MusicContext";
+import { MusicProvider } from "./src/contexts/MusicContext";
 
 import IntroScreen from "./src/screens/auth/IntroScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Animated,
   Dimensions,
@@ -14,7 +14,10 @@ import {
   View,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useMusicContext } from "../../../contexts/MusicContext";
+import { Audio } from 'expo-av';
+
+// MusicContext를 가져와 전역 상태를 사용
+import { useMusicContext } from "../../contexts/MusicContext";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -25,18 +28,28 @@ export default function MusicPlayerScreen({
   navigation: any;
   route: any;
 }) {
-  const { id, title, subtitle, image } = route.params || {};
+  const { id, title, subtitle, image, audio } = route.params || {};
+
+  // Context에서 음악 재생 상태와 함수를 가져옴
   const {
     currentSound,
     isPlaying,
     currentTime,
     duration,
+    playSound,
     togglePlayPause,
-    setCurrentTime,
-    rewind,
-    forward,
+    seekToTime,
   } = useMusicContext();
 
+  // 현재 화면으로 들어올 때, Context에 재생 중인 음원이 없거나
+  // 현재 음원과 다른 경우 새로운 음원 재생을 시작
+  useEffect(() => {
+    if (audio && (!currentSound || audio !== currentSound.audio)) {
+      playSound(route.params);
+    }
+  }, [audio, currentSound, playSound, route.params]);
+
+  // UI 상태 (Context와 무관)
   const [isFavorite, setIsFavorite] = useState(false);
   const [showFavoritePopup, setShowFavoritePopup] = useState(false);
   const [isCreatingDrawer, setIsCreatingDrawer] = useState(false);
@@ -44,6 +57,18 @@ export default function MusicPlayerScreen({
 
   // 애니메이션을 위한 값
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
+
+  // 30초 뒤로
+  const rewind = () => {
+    const newTime = Math.max(0, currentTime - 30);
+    seekToTime(newTime);
+  };
+
+  // 30초 앞으로
+  const forward = () => {
+    const newTime = Math.min(duration, currentTime + 30);
+    seekToTime(newTime);
+  };
 
   // 팝업 열기 애니메이션
   const openPopup = () => {
@@ -88,6 +113,7 @@ export default function MusicPlayerScreen({
 
   // 시간 포맷 변환 (초 -> MM:SS)
   const formatTime = (seconds: number) => {
+    if (isNaN(seconds)) return "00:00";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs
@@ -96,7 +122,7 @@ export default function MusicPlayerScreen({
   };
 
   // 진행률 계산
-  const progress = (currentTime / duration) * 100;
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   // Progress bar pan responder
   const panResponder = PanResponder.create({
@@ -109,7 +135,7 @@ export default function MusicPlayerScreen({
       const clampedX = Math.max(0, Math.min(progressBarWidth, touchX));
       const newProgress = clampedX / progressBarWidth;
       const newTime = Math.floor(newProgress * duration);
-      setCurrentTime(newTime);
+      seekToTime(newTime);
     },
 
     onPanResponderMove: (evt) => {
@@ -118,13 +144,29 @@ export default function MusicPlayerScreen({
       const clampedX = Math.max(0, Math.min(progressBarWidth, touchX));
       const newProgress = clampedX / progressBarWidth;
       const newTime = Math.floor(newProgress * duration);
-      setCurrentTime(newTime);
+      seekToTime(newTime);
     },
 
     onPanResponderRelease: () => {
       // 드래그가 끝나면 처리할 로직이 있다면 여기에
     },
   });
+
+  // currentSound가 없는 경우 로딩 상태를 표시
+  if (!currentSound) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // 이제 route.params 대신 currentSound에서 정보를 가져옴
+  const displayTitle = currentSound?.title || "사운드";
+  const displaySubtitle = currentSound?.subtitle || "재생 중";
+  const displayImage = currentSound?.image || null;
+  const isLoading = currentSound === null;
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -154,9 +196,9 @@ export default function MusicPlayerScreen({
         {/* Artwork */}
         <View style={styles.artworkContainer}>
           <View style={styles.artworkImage}>
-            {(image || currentSound?.image) && (
+            {displayImage && (
               <Image
-                source={image || currentSound?.image}
+                source={displayImage}
                 style={styles.actualImage}
               />
             )}
@@ -166,28 +208,44 @@ export default function MusicPlayerScreen({
         {/* Track Info */}
         <View style={styles.trackInfo}>
           <Text style={styles.trackTitle}>
-            {currentSound?.title || title || "우주의 탄생"}
+            {displayTitle}
           </Text>
           <Text style={styles.trackArtist}>
-            {currentSound?.subtitle || subtitle || "EBS"}
+            {displaySubtitle}
           </Text>
         </View>
 
         {/* Controls */}
         <View style={styles.controlsContainer}>
-          <TouchableOpacity style={styles.controlButton} onPress={rewind}>
+          <TouchableOpacity 
+            style={styles.controlButton} 
+            onPress={rewind}
+            disabled={isLoading}
+          >
             <MaterialIcons name="replay-30" size={24} color="#ffffff" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.playButton} onPress={togglePlayPause}>
-            <Ionicons
-              name={isPlaying ? "pause" : "play"}
-              size={24}
-              color="#ffffff"
-            />
+          <TouchableOpacity 
+            style={styles.playButton} 
+            onPress={togglePlayPause}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Text style={styles.loadingText}>...</Text>
+            ) : (
+              <Ionicons
+                name={isPlaying ? "pause" : "play"}
+                size={24}
+                color="#ffffff"
+              />
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.controlButton} onPress={forward}>
+          <TouchableOpacity 
+            style={styles.controlButton} 
+            onPress={forward}
+            disabled={isLoading}
+          >
             <MaterialIcons name="forward-30" size={24} color="#ffffff" />
           </TouchableOpacity>
         </View>
@@ -383,6 +441,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#007aff",
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingText: {
+    color: "#ffffff",
+    fontSize: 16,
   },
   progressContainer: {
     width: "100%",
