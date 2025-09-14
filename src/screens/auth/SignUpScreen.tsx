@@ -19,7 +19,6 @@ import {
   View,
 } from "react-native";
 
-const naverImage = require("../../../assets/naver.png");
 const googleImage = require("../../../assets/google.png");
 
 const { width, height } = Dimensions.get("window");
@@ -143,10 +142,6 @@ function SignUpScreen({ navigation }: { navigation: any }) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.naverBtn} activeOpacity={0.8}>
-              <Image source={naverImage} style={styles.socialIcon} />
-              <Text style={styles.socialBtnText}>CONTINUE WITH NAVER</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8}>
               <Image source={googleImage} style={styles.socialIcon} />
               <Text style={styles.socialBtnText}>CONTINUE WITH GOOGLE</Text>
@@ -604,30 +599,13 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignSelf: "center",
     paddingHorizontal: 20,
-    paddingTop: height < 700 ? 70 : 100,
+    paddingTop: height < 700 ? 20 : 40,
     paddingBottom: 40,
     justifyContent: "flex-start",
   },
   socialButtons: {
     marginBottom: 5,
     marginTop: 0,
-  },
-  naverBtn: {
-    backgroundColor: "#03cf5d",
-    borderRadius: 25,
-    width: "100%",
-    paddingVertical: 15,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    minHeight: 44,
-    shadowColor: "#03cf5d",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   googleBtn: {
     backgroundColor: "#2a2a2a",

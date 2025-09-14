@@ -12,19 +12,6 @@ export default function LinkScreen({ navigation }) {
       <View style={styles.content}>
         <Text style={styles.title}>계정 연동</Text>
 
-        <TouchableOpacity style={styles.naverBtn} activeOpacity={0.8}>
-          <View style={styles.btnInner}>
-            <View style={styles.naverIconBox}>
-              <Image
-              source={{ uri: "https://i.ibb.co/DPNmQ5dY/Path.png" }}
-              style={styles.naverIcon}
-              resizeMode="contain"
-            />
-            </View>
-            <Text style={styles.naverText}>CONTINUE WITH NAVER</Text>
-          </View>
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8}>
           <View style={styles.btnInner}>
             <Image
@@ -63,28 +50,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 40,
   },
-  naverBtn: {
-    width: "100%",
-    backgroundColor: "#03c75a",
-    borderRadius: 999,
-    paddingVertical: 15,
-    marginBottom: 20,
-  },
   btnInner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-  },
-  naverIcon: {
-    width: 26,
-    height: 26,
-    marginRight: 10,
-  },
-  naverText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 15,
-    letterSpacing: 0.5,
   },
   googleBtn: {
     width: "100%",
