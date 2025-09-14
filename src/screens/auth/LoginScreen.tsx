@@ -14,7 +14,6 @@ import {
 
 const { width, height } = Dimensions.get("window");
 
-const naverImage = require("../../../assets/naver.png");
 const googleImage = require("../../../assets/google.png");
 
 function LoginScreen({ navigation }: { navigation: any }) {
@@ -35,10 +34,6 @@ function LoginScreen({ navigation }: { navigation: any }) {
       {/* Main Content Area */}
       <View style={styles.content}>
         {/* Social Login Buttons */}
-        <TouchableOpacity style={styles.naverBtn} activeOpacity={0.8}>
-          <Image source={naverImage} style={styles.socialIcon} />
-          <Text style={styles.socialBtnText}>CONTINUE WITH NAVER</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8}>
           <Image source={googleImage} style={styles.socialIcon} />
           <Text style={styles.socialBtnText}>CONTINUE WITH GOOGLE</Text>
@@ -75,17 +70,6 @@ function LoginScreen({ navigation }: { navigation: any }) {
           onPress={() => navigation.navigate("Home")} // React Navigation 방식으로 변경
         >
           <Text style={styles.submitBtnText}>LOG IN</Text>
-        </TouchableOpacity>
-
-        {/* Forgot Password Link */}
-        <TouchableOpacity
-          style={styles.forgotLink}
-          onPress={() => {
-            // 비밀번호 찾기 기능 추가 필요시
-            console.log("Forgot password pressed");
-          }}
-        >
-          <Text style={styles.forgotLinkText}>Forgot Password?</Text>
         </TouchableOpacity>
 
         {/* Sign Up Redirect */}
@@ -140,25 +124,8 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     alignSelf: "center",
     paddingHorizontal: 20,
-    paddingTop: height < 700 ? 70 : 100,
+    paddingTop: height < 700 ? 60 : 80,
     paddingBottom: 20,
-  },
-  naverBtn: {
-    backgroundColor: "#03cf5d",
-    borderRadius: 25,
-    width: "100%",
-    paddingVertical: 15,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    minHeight: 44,
-    shadowColor: "#03cf5d",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   googleBtn: {
     backgroundColor: "#2a2a2a",
@@ -177,6 +144,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 12,
     elevation: 8,
+    marginBottom: 12,
   },
   socialBtnText: {
     color: "white",
@@ -223,7 +191,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     width: "100%",
     borderRadius: 25,
-    marginBottom: 15,
+    marginBottom: 30,
     alignItems: "center",
     minHeight: 44,
     shadowColor: "#3f78ff",
@@ -236,19 +204,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     fontSize: 14,
-  },
-  forgotLink: {
-    alignSelf: "center",
-    marginBottom: 20,
-    minHeight: 35,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 10,
-  },
-  forgotLinkText: {
-    color: "#3f78ff",
-    fontSize: 12,
-    textDecorationLine: "underline",
   },
   signupRedirectContainer: {
     flexDirection: "row",
