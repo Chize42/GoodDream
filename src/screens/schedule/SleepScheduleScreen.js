@@ -1,352 +1,558 @@
 import React, { useState, useEffect } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
+  StyleSheet,
   TouchableOpacity,
   Switch,
-  FlatList,
-  StyleSheet,
-  Image,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  getSleepSchedules,
+  deleteSleepSchedules,
+  toggleScheduleEnabled as toggleScheduleEnabledService,
+  saveSleepSchedule,
+  updateSleepSchedule,
+} from "../../services/sleepScheduleService";
 
-export default function SleepScheduleScreen({ navigation, route }) {
-  const [scheduleEnabled, setScheduleEnabled] = useState(true);
-  const [schedules, setSchedules] = useState([
-    {
-      id: "1",
-      name: "평일 수면",
-      bedtime: "22:00",
-      wakeup: "06:00",
-      days: ["월", "화", "수", "목", "금"],
-      enabled: true,
-    },
-    {
-      id: "2",
-      name: "주말 수면",
-      bedtime: "00:00",
-      wakeup: "08:00",
-      days: ["토", "일"],
-      enabled: false,
-    },
-  ]);
+const SleepScheduleScreen = ({ navigation, route }) => {
+  const [isMainSleepEnabled, setIsMainSleepEnabled] = useState(true);
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [sleepSchedules, setSleepSchedules] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // 임시 사용자 ID (실제 앱에서는 인증 시스템에서 가져와야 함)
+  const userId = "user123";
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    loadSchedules();
+  }, []);
+
+  // 새로운 스케줄이나 편집된 스케줄이 있을 때 처리
   useEffect(() => {
     if (route.params?.newSchedule) {
-      const newSchedule = {
-        ...route.params.newSchedule,
-        id: Date.now().toString(),
-        enabled: true,
-      };
-      setSchedules((prev) => [...prev, newSchedule]);
-      navigation.setParams({ newSchedule: undefined });
+      handleNewSchedule(route.params.newSchedule);
+      // 파라미터 클리어
+      navigation.setParams({ newSchedule: null });
     }
-
     if (route.params?.editedSchedule) {
-      const { editedSchedule } = route.params;
-      setSchedules((prev) =>
-        prev.map((schedule) =>
-          schedule.id === editedSchedule.id ? editedSchedule : schedule
-        )
-      );
-      navigation.setParams({ editedSchedule: undefined });
+      handleEditedSchedule(route.params.editedSchedule);
+      // 파라미터 클리어
+      navigation.setParams({ editedSchedule: null });
     }
   }, [route.params]);
 
-  const toggleSchedule = (id) => {
-    setSchedules((prev) =>
-      prev.map((schedule) =>
-        schedule.id === id
-          ? { ...schedule, enabled: !schedule.enabled }
-          : schedule
-      )
-    );
+  const loadSchedules = async () => {
+    try {
+      setIsLoading(true);
+      const schedules = await getSleepSchedules(userId);
+      setSleepSchedules(schedules);
+    } catch (error) {
+      Alert.alert("오류", "스케줄을 불러오는데 실패했습니다.");
+      console.error("스케줄 로드 실패:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const deleteSchedule = (id) => {
-    setSchedules((prev) => prev.filter((schedule) => schedule.id !== id));
+  const handleNewSchedule = async (newSchedule) => {
+    try {
+      const savedSchedule = await saveSleepSchedule(newSchedule, userId);
+      setSleepSchedules((prev) => [savedSchedule, ...prev]);
+    } catch (error) {
+      Alert.alert("오류", "스케줄 저장에 실패했습니다.");
+      console.error("스케줄 저장 실패:", error);
+    }
   };
 
-  const renderScheduleItem = ({ item }) => (
-    <View style={styles.scheduleCard}>
-      <View style={styles.scheduleHeader}>
-        <View style={styles.scheduleInfo}>
-          <Text
-            style={[
-              styles.scheduleName,
-              { color: item.enabled ? "#fff" : "#777" },
-            ]}
-          >
-            {item.name}
-          </Text>
-          <Text
-            style={[
-              styles.scheduleDays,
-              { color: item.enabled ? "#7bb6ff" : "#555" },
-            ]}
-          >
-            {item.days.join(", ")}
-          </Text>
-        </View>
-        <Switch
-          trackColor={{ false: "#444", true: "#2196F3" }}
-          thumbColor={item.enabled ? "#fff" : "#ccc"}
-          value={item.enabled}
-          onValueChange={() => toggleSchedule(item.id)}
-        />
-      </View>
+  const handleEditedSchedule = async (editedSchedule) => {
+    try {
+      const updatedSchedule = await updateSleepSchedule(
+        editedSchedule.id,
+        editedSchedule,
+        userId
+      );
+      setSleepSchedules((prev) =>
+        prev.map((schedule) =>
+          schedule.id === editedSchedule.id ? updatedSchedule : schedule
+        )
+      );
+    } catch (error) {
+      Alert.alert("오류", "스케줄 수정에 실패했습니다.");
+      console.error("스케줄 수정 실패:", error);
+    }
+  };
 
-      <View style={styles.timeContainer}>
-        <View style={styles.timeItem}>
-          <Image
-            source={{ uri: "https://i.ibb.co/yhqBzQW/bed-icon.png" }}
-            style={styles.timeIcon}
-          />
-          <Text style={styles.timeLabel}>BEDTIME</Text>
-          <Text
-            style={[
-              styles.timeValue,
-              { color: item.enabled ? "#fff" : "#777" },
-            ]}
-          >
-            {item.bedtime}
-          </Text>
-        </View>
+  const toggleDeleteMode = () => {
+    setIsDeleteMode(!isDeleteMode);
+    setSelectedItems([]);
+  };
 
-        <View style={styles.timeItem}>
-          <Image
-            source={{ uri: "https://i.ibb.co/rQYh2Mz/alarm-icon.png" }}
-            style={styles.timeIcon}
-          />
-          <Text style={styles.timeLabel}>WAKE UP</Text>
-          <Text
-            style={[
-              styles.timeValue,
-              { color: item.enabled ? "#fff" : "#777" },
-            ]}
-          >
-            {item.wakeup}
-          </Text>
-        </View>
-      </View>
+  const toggleItemSelection = (id) => {
+    if (selectedItems.includes(id)) {
+      setSelectedItems(selectedItems.filter((item) => item !== id));
+    } else {
+      setSelectedItems([...selectedItems, id]);
+    }
+  };
 
-      <View style={styles.scheduleActions}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() =>
-            navigation.navigate("AddSleepSchedule", { editSchedule: item })
-          }
-        >
-          <Text style={styles.editButtonText}>편집</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => deleteSchedule(item.id)}
-        >
-          <Text style={styles.deleteButtonText}>삭제</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  const deleteSelectedItems = async () => {
+    try {
+      setIsLoading(true);
+      await deleteSleepSchedules(selectedItems, userId);
+      setSleepSchedules(
+        sleepSchedules.filter(
+          (schedule) => !selectedItems.includes(schedule.id)
+        )
+      );
+      setSelectedItems([]);
+
+      if (
+        sleepSchedules.filter(
+          (schedule) => !selectedItems.includes(schedule.id)
+        ).length === 0
+      ) {
+        setIsDeleteMode(false);
+      }
+    } catch (error) {
+      Alert.alert("오류", "스케줄 삭제에 실패했습니다.");
+      console.error("스케줄 삭제 실패:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleScheduleEnabled = async (id) => {
+    if (!isDeleteMode) {
+      try {
+        const updatedSchedule = await toggleScheduleEnabledService(id, userId);
+        setSleepSchedules(
+          sleepSchedules.map((schedule) =>
+            schedule.id === id ? updatedSchedule : schedule
+          )
+        );
+      } catch (error) {
+        Alert.alert("오류", "스케줄 설정 변경에 실패했습니다.");
+        console.error("스케줄 토글 실패:", error);
+      }
+    }
+  };
+
+  const getItemStyle = (id) => {
+    if (!isDeleteMode) return styles.scheduleItem;
+
+    if (selectedItems.includes(id)) {
+      return [styles.scheduleItem, styles.selectedItem];
+    } else {
+      return [styles.scheduleItem, styles.selectableItem];
+    }
+  };
+
+  const handleSchedulePress = (schedule) => {
+    if (!isDeleteMode && isMainSleepEnabled) {
+      // 편집 모드로 AddSleepScheduleScreen에 이동
+      navigation.navigate("AddSleepSchedule", {
+        editSchedule: schedule,
+        existingSchedules: sleepSchedules,
+      });
+    }
+  };
+
+  const handleAddSchedule = () => {
+    // AddSleepScheduleScreen으로 네비게이션하면서 기존 스케줄 정보도 전달
+    navigation.navigate("AddSleepSchedule", {
+      existingSchedules: sleepSchedules,
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#181820" />
+
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image
-            source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-            style={styles.headerIcon}
-          />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate("Home")}
+        >
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>수면 스케줄</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      <View style={styles.mainToggle}>
-        <View style={styles.toggleInfo}>
-          <Text style={styles.toggleTitle}>수면 스케줄</Text>
-          <Text style={styles.toggleSubtitle}>
-            설정된 시간에 수면 알림을 받습니다
-          </Text>
-        </View>
-        <Switch
-          trackColor={{ false: "#444", true: "#2196F3" }}
-          thumbColor={scheduleEnabled ? "#fff" : "#ccc"}
-          value={scheduleEnabled}
-          onValueChange={setScheduleEnabled}
-        />
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>내 수면 스케줄</Text>
         <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate("AddSleepSchedule")}
+          style={styles.deleteButton}
+          onPress={toggleDeleteMode}
         >
-          <Image
-            source={{ uri: "https://i.ibb.co/zTGMMC5s/ic-round-plus.png" }}
-            style={styles.addIcon}
+          <Ionicons
+            name="trash-outline"
+            size={24}
+            color={isDeleteMode ? "#007AFF" : "#fff"}
           />
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={schedules}
-        keyExtractor={(item) => item.id}
-        renderItem={renderScheduleItem}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-      />
+      <View style={styles.content}>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>스케줄을 불러오는 중...</Text>
+          </View>
+        ) : (
+          <>
+            {/* 수면 스케줄 메인 토글 */}
+            <View style={styles.mainToggleContainer}>
+              <View>
+                <Text style={styles.mainToggleTitle}>수면 스케줄</Text>
+                <Text style={styles.mainToggleSubtitle}>
+                  설정된 시간에 수면 알림을 받습니다
+                </Text>
+              </View>
+              <Switch
+                value={isMainSleepEnabled}
+                onValueChange={setIsMainSleepEnabled}
+                trackColor={{ false: "#3A3A3C", true: "#007AFF" }}
+                thumbColor="#fff"
+              />
+            </View>
+
+            {/* 내 수면 스케줄 섹션 */}
+            <Text
+              style={[
+                styles.sectionTitle,
+                !isMainSleepEnabled && styles.disabledText,
+              ]}
+            >
+              내 수면 스케줄
+            </Text>
+
+            {sleepSchedules.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  등록된 수면 스케줄이 없습니다.
+                </Text>
+                <Text style={styles.emptySubText}>
+                  새 스케줄을 추가해보세요.
+                </Text>
+              </View>
+            ) : (
+              /* 스케줄 아이템들 */
+              sleepSchedules.map((schedule) => (
+                <TouchableOpacity
+                  key={schedule.id}
+                  style={[
+                    getItemStyle(schedule.id),
+                    !isMainSleepEnabled && styles.disabledScheduleItem,
+                  ]}
+                  onPress={() => {
+                    if (isDeleteMode && isMainSleepEnabled) {
+                      toggleItemSelection(schedule.id);
+                    } else if (!isDeleteMode && isMainSleepEnabled) {
+                      handleSchedulePress(schedule);
+                    }
+                  }}
+                  activeOpacity={
+                    (isDeleteMode && isMainSleepEnabled) ||
+                    (!isDeleteMode && isMainSleepEnabled)
+                      ? 0.7
+                      : 1
+                  }
+                  disabled={!isMainSleepEnabled}
+                >
+                  <View style={styles.scheduleHeader}>
+                    <View>
+                      <Text
+                        style={[
+                          styles.scheduleName,
+                          !isMainSleepEnabled && styles.disabledText,
+                        ]}
+                      >
+                        {schedule.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.scheduleSubtitle,
+                          !isMainSleepEnabled && styles.disabledSubtitle,
+                        ]}
+                      >
+                        {schedule.days ? schedule.days.join(", ") : "일"}
+                      </Text>
+                    </View>
+                    {!isDeleteMode && (
+                      <Switch
+                        value={isMainSleepEnabled && schedule.enabled}
+                        onValueChange={() =>
+                          handleToggleScheduleEnabled(schedule.id)
+                        }
+                        trackColor={{
+                          false: isMainSleepEnabled ? "#3A3A3C" : "#2A2A2A",
+                          true: "#007AFF",
+                        }}
+                        thumbColor={isMainSleepEnabled ? "#fff" : "#666"}
+                        disabled={!isMainSleepEnabled}
+                      />
+                    )}
+                  </View>
+
+                  <View style={styles.timeContainer}>
+                    <View style={styles.timeSection}>
+                      <Text
+                        style={[
+                          styles.timeLabel,
+                          !isMainSleepEnabled && styles.disabledText,
+                        ]}
+                      >
+                        BEDTIME
+                      </Text>
+                      <Text
+                        style={[
+                          styles.timeValue,
+                          !isMainSleepEnabled && styles.disabledText,
+                        ]}
+                      >
+                        {schedule.bedtime}
+                      </Text>
+                    </View>
+                    <View style={styles.timeSection}>
+                      <Text
+                        style={[
+                          styles.timeLabel,
+                          !isMainSleepEnabled && styles.disabledText,
+                        ]}
+                      >
+                        WAKE UP
+                      </Text>
+                      <Text
+                        style={[
+                          styles.timeValue,
+                          !isMainSleepEnabled && styles.disabledText,
+                        ]}
+                      >
+                        {schedule.wakeup}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+
+            {/* 추가 버튼 */}
+            {!isDeleteMode && isMainSleepEnabled && (
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={handleAddSchedule}
+              >
+                <Ionicons name="add" size={24} color="#007AFF" />
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+      </View>
+
+      {/* 삭제 모드일 때 하단 버튼들 */}
+      {isDeleteMode && (
+        <View style={styles.bottomButtons}>
+          <TouchableOpacity
+            style={styles.bottomButton}
+            onPress={() => setIsDeleteMode(false)}
+          >
+            <Text style={styles.bottomButtonText}>취소</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.bottomButton,
+              selectedItems.length > 0 && styles.deleteButtonActive,
+            ]}
+            onPress={deleteSelectedItems}
+            disabled={selectedItems.length === 0}
+          >
+            <Text
+              style={[
+                styles.bottomButtonText,
+                selectedItems.length > 0 && styles.deleteButtonTextActive,
+              ]}
+            >
+              삭제
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111",
+    backgroundColor: "#181820",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
-  },
-  headerIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#fff",
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-    marginRight: 24,
-  },
-  placeholder: {
-    width: 24,
-  },
-  mainToggle: {
-    flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: "#1e1e1e",
-    marginHorizontal: 20,
-    borderRadius: 15,
-    marginBottom: 30,
+    paddingVertical: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#3A3A3C",
   },
-  toggleInfo: {
-    flex: 1,
-  },
-  toggleTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 5,
-  },
-  toggleSubtitle: {
-    fontSize: 14,
-    color: "#aaa",
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  addButton: {
-    backgroundColor: "#2196F3",
-    borderRadius: 20,
+  backButton: {
     padding: 8,
   },
-  addIcon: {
-    width: 20,
-    height: 20,
-    tintColor: "#fff",
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#fff",
   },
-  listContainer: {
+  deleteButton: {
+    padding: 8,
+  },
+  content: {
+    flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingTop: 20,
   },
-  scheduleCard: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
+  mainToggleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#3A3A3C",
+    marginBottom: 24,
+  },
+  mainToggleTitle: {
+    fontSize: 18,
+    fontWeight: "500",
+    color: "#fff",
+    marginBottom: 4,
+  },
+  mainToggleSubtitle: {
+    fontSize: 14,
+    color: "#9ca3af",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#fff",
+    marginBottom: 16,
+  },
+  scheduleItem: {
+    backgroundColor: "#2a2d47",
+    borderRadius: 16,
+    padding: 21,
+    marginBottom: 12,
+  },
+  selectableItem: {
+    borderWidth: 1,
+    borderColor: "#fff",
+  },
+  selectedItem: {
+    borderWidth: 2,
+    borderColor: "#007AFF",
   },
   scheduleHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  scheduleInfo: {
-    flex: 1,
+    alignItems: "center",
+    marginBottom: 16,
   },
   scheduleName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#fff",
+    marginBottom: 2,
   },
-  scheduleDays: {
+  scheduleSubtitle: {
     fontSize: 14,
+    color: "#007AFF",
   },
   timeContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 20,
+    paddingHorizontal: 20,
   },
-  timeItem: {
+  timeSection: {
     alignItems: "center",
-  },
-  timeIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#7bb6ff",
-    marginBottom: 8,
   },
   timeLabel: {
     fontSize: 12,
-    color: "#aaa",
-    marginBottom: 5,
+    color: "#9ca3af",
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   timeValue: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 32,
+    fontWeight: "300",
+    color: "#fff",
   },
-  scheduleActions: {
+  addButton: {
+    backgroundColor: "#2a2d47",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    marginBottom: 12,
+  },
+  bottomButtons: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    borderTopWidth: 0.5,
+    borderTopColor: "#3A3A3C",
   },
-  editButton: {
-    backgroundColor: "#2196F3",
-    paddingHorizontal: 30,
-    paddingVertical: 10,
-    borderRadius: 20,
+  bottomButton: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  editButtonText: {
+  bottomButtonText: {
+    fontSize: 16,
+    color: "#007AFF",
+  },
+  deleteButtonActive: {
+    backgroundColor: "#FF3B30",
+  },
+  deleteButtonTextActive: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "600",
   },
-  deleteButton: {
-    backgroundColor: "#ff4444",
-    paddingHorizontal: 30,
-    paddingVertical: 10,
-    borderRadius: 20,
+  // 비활성화 스타일들
+  disabledScheduleItem: {
+    backgroundColor: "#1a1a1a",
+    opacity: 0.6,
   },
-  deleteButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  disabledText: {
+    color: "#666",
+  },
+  disabledSubtitle: {
+    color: "#444",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#9ca3af",
+    fontSize: 16,
+    marginTop: 16,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    color: "#9ca3af",
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  emptySubText: {
+    color: "#666",
+    fontSize: 14,
   },
 });
+
+export default SleepScheduleScreen;
