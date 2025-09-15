@@ -5,11 +5,16 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image,
   TextInput,
   Alert,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import {
+  getSleepSchedules,
+  saveSleepSchedule,
+  updateSleepSchedule,
+} from "../../services/sleepScheduleService";
 
 const DAYS = [
   { key: "M", label: "월", full: "월요일" },
@@ -23,7 +28,24 @@ const DAYS = [
 
 export default function AddSleepScheduleScreen({ navigation, route }) {
   const editSchedule = route.params?.editSchedule;
+  const existingSchedules = route.params?.existingSchedules || []; // 기존 스케줄들
   const isEditing = !!editSchedule;
+
+  // 기존 스케줄들에서 사용 중인 요일들 추출
+  const getUsedDays = () => {
+    const usedDays = new Set();
+    existingSchedules.forEach((schedule) => {
+      if (schedule.id !== editSchedule?.id) {
+        // 편집 중인 스케줄은 제외
+        if (schedule.days) {
+          schedule.days.forEach((day) => usedDays.add(day));
+        }
+      }
+    });
+    return Array.from(usedDays);
+  };
+
+  const usedDays = getUsedDays();
 
   const [scheduleName, setScheduleName] = useState(
     editSchedule?.name || "새 스케줄"
@@ -43,6 +65,12 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
   const [showWakeupPicker, setShowWakeupPicker] = useState(false);
 
   const toggleDay = (day) => {
+    // 이미 사용 중인 요일은 선택할 수 없음
+    if (usedDays.includes(day) && !selectedDays.includes(day)) {
+      Alert.alert("알림", `${day}요일은 이미 다른 스케줄에서 사용 중입니다.`);
+      return;
+    }
+
     setSelectedDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
@@ -102,11 +130,11 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image
-            source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-            style={styles.headerIcon}
-          />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {isEditing ? "스케줄 편집" : "스케줄 추가"}
@@ -125,7 +153,7 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
             value={scheduleName}
             onChangeText={setScheduleName}
             placeholder="스케줄 이름을 입력하세요"
-            placeholderTextColor="#666"
+            placeholderTextColor="#9ca3af"
           />
         </View>
 
@@ -133,26 +161,32 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>활성 요일</Text>
           <View style={styles.daysContainer}>
-            {DAYS.map((day) => (
-              <TouchableOpacity
-                key={day.key}
-                style={[
-                  styles.dayButton,
-                  selectedDays.includes(day.label) && styles.dayButtonActive,
-                ]}
-                onPress={() => toggleDay(day.label)}
-              >
-                <Text
+            {DAYS.map((day) => {
+              const isSelected = selectedDays.includes(day.label);
+              const isAlreadyUsed = usedDays.includes(day.label);
+
+              return (
+                <TouchableOpacity
+                  key={day.key}
                   style={[
-                    styles.dayButtonText,
-                    selectedDays.includes(day.label) &&
-                      styles.dayButtonTextActive,
+                    styles.dayButton,
+                    isSelected && styles.dayButtonActive,
+                    isAlreadyUsed && !isSelected && styles.dayButtonUsed,
                   ]}
+                  onPress={() => toggleDay(day.label)}
                 >
-                  {day.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.dayButtonText,
+                      isSelected && styles.dayButtonTextActive,
+                      isAlreadyUsed && !isSelected && styles.dayButtonTextUsed,
+                    ]}
+                  >
+                    {day.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -166,8 +200,10 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
               onPress={() => setShowBedtimePicker(true)}
             >
               <View style={styles.timeInfo}>
-                <Image
-                  source={{ uri: "https://i.ibb.co/yhqBzQW/bed-icon.png" }}
+                <Ionicons
+                  name="bed-outline"
+                  size={24}
+                  color="#007AFF"
                   style={styles.timeIcon}
                 />
                 <View>
@@ -175,10 +211,7 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
                   <Text style={styles.timeValue}>{formatTime(bedtime)}</Text>
                 </View>
               </View>
-              <Image
-                source={{ uri: "https://i.ibb.co/60229hwt/Arrow.png" }}
-                style={styles.arrowIcon}
-              />
+              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -186,8 +219,10 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
               onPress={() => setShowWakeupPicker(true)}
             >
               <View style={styles.timeInfo}>
-                <Image
-                  source={{ uri: "https://i.ibb.co/rQYh2Mz/alarm-icon.png" }}
+                <Ionicons
+                  name="alarm-outline"
+                  size={24}
+                  color="#007AFF"
                   style={styles.timeIcon}
                 />
                 <View>
@@ -195,10 +230,7 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
                   <Text style={styles.timeValue}>{formatTime(wakeupTime)}</Text>
                 </View>
               </View>
-              <Image
-                source={{ uri: "https://i.ibb.co/60229hwt/Arrow.png" }}
-                style={styles.arrowIcon}
-              />
+              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
             </TouchableOpacity>
           </View>
         </View>
@@ -243,48 +275,50 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111",
+    backgroundColor: "#181820",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#3A3A3C",
   },
-  headerIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#fff",
+  backButton: {
+    padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "600",
     color: "#fff",
   },
   saveButton: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#2196F3",
+    fontWeight: "500",
+    color: "#007AFF",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingTop: 20,
   },
   section: {
     marginBottom: 30,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#fff",
     marginBottom: 15,
   },
   nameInput: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    backgroundColor: "#2a2d47",
+    borderRadius: 16,
+    paddingHorizontal: 16,
     paddingVertical: 15,
     fontSize: 16,
     color: "#fff",
@@ -297,20 +331,38 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#2a2d47",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: "transparent",
   },
   dayButtonActive: {
-    backgroundColor: "#2196F3",
-    borderColor: "#2196F3",
+    backgroundColor: "#007AFF",
+    borderColor: "#007AFF",
+    borderWidth: 2,
+  },
+  dayButtonUsed: {
+    backgroundColor: "#2a2d47",
+    borderColor: "#007AFF",
+    borderWidth: 2,
+  },
+  dayButtonDisabled: {
+    backgroundColor: "#1a1a1a",
+    borderColor: "#007AFF",
+    borderWidth: 2,
+    opacity: 0.5,
+  },
+  dayButtonTextUsed: {
+    color: "#007AFF",
+  },
+  dayButtonTextDisabled: {
+    color: "#666",
   },
   dayButtonText: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#aaa",
+    fontWeight: "500",
+    color: "#9ca3af",
   },
   dayButtonTextActive: {
     color: "#fff",
@@ -319,8 +371,8 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   timeButton: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 15,
+    backgroundColor: "#2a2d47",
+    borderRadius: 16,
     padding: 20,
     flexDirection: "row",
     alignItems: "center",
@@ -331,41 +383,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   timeIcon: {
-    width: 24,
-    height: 24,
-    tintColor: "#7bb6ff",
     marginRight: 15,
   },
   timeLabel: {
     fontSize: 14,
-    color: "#aaa",
+    color: "#9ca3af",
     marginBottom: 5,
   },
   timeValue: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#fff",
   },
-  arrowIcon: {
-    width: 20,
-    height: 20,
-    tintColor: "#aaa",
-  },
   sleepDurationCard: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 15,
+    backgroundColor: "#2a2d47",
+    borderRadius: 16,
     padding: 20,
     alignItems: "center",
     marginTop: 20,
   },
   sleepDurationLabel: {
     fontSize: 14,
-    color: "#aaa",
+    color: "#9ca3af",
     marginBottom: 5,
   },
   sleepDurationValue: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#7bb6ff",
+    fontWeight: "600",
+    color: "#007AFF",
   },
 });
