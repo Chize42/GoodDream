@@ -212,8 +212,8 @@ function HomeScreen({ navigation }: { navigation: any }) {
               source={require("../../../assets/alramOwl.png")}
               style={styles.cardIllustration}
             />
-            <Text style={styles.cardTitle}>알람설정</Text>
-            <Text style={styles.cardSubtitle}>ALARM</Text>
+            <Text style={styles.cardTitle}>스케줄설정</Text>
+            <Text style={styles.cardSubtitle}>SCHEDULE</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
