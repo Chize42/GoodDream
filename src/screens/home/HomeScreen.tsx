@@ -203,30 +203,47 @@ function HomeScreen({ navigation }: { navigation: any }) {
           <WeekChart weekData={weekData} />
         </View>
 
-        <View style={styles.cardContainer}>
+        {/* 알람 + 사운드/버블 */}
+        <View style={styles.cardRow}>
+          {/* 왼쪽 알람 큰 카드 */}
           <TouchableOpacity
-            style={[styles.card, styles.purple]}
+            style={[styles.bigCard, styles.purple]}
             onPress={() => navigation.navigate("SleepSchedule")}
           >
             <Image
               source={require("../../../assets/alramOwl.png")}
               style={styles.cardIllustration}
             />
-            <Text style={styles.cardTitle}>스케줄설정</Text>
-            <Text style={styles.cardSubtitle}>SCHEDULE</Text>
+            <Text style={styles.cardTitle}>알람설정</Text>
+            <Text style={styles.cardSubtitle}>ALARM</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.card, styles.orange]}
-            onPress={() => navigation.navigate("Music")}
-          >
-            <Image
-              source={require("../../../assets/soundOwl.png")}
-              style={styles.cardIllustration}
-            />
-            <Text style={styles.cardTitleT}>사운드</Text>
-            <Text style={styles.cardSubtitleT}>MUSIC</Text>
-          </TouchableOpacity>
+          {/* 오른쪽 (사운드 + 버블) */}
+          <View style={styles.smallCardColumn}>
+            <TouchableOpacity
+              style={[styles.smallCard, styles.orange]}
+              onPress={() => navigation.navigate("Music")}
+            >
+              <Image
+                source={require("../../../assets/soundOwl.png")}
+                style={styles.cardIllustration}
+              />
+              <Text style={styles.cardTitleT}>사운드</Text>
+              <Text style={styles.cardSubtitleT}>MUSIC</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.smallCard, styles.blue]}
+              onPress={() => navigation.navigate("Bubble")}
+            >
+              <Image
+                source={require("../../../assets/bubble.png")}
+                style={styles.bubbleIllustration} // 버블 이미지만 다른 스타일 적용
+              />
+              <Text style={styles.cardTitle}>버블</Text>
+              <Text style={styles.cardSubtitle}>BUBBLE</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -348,11 +365,28 @@ const styles = StyleSheet.create({
     color: "#777",
     fontSize: 12,
   },
-  cardContainer: {
+  // 🔽 새롭게 수정된 카드 레이아웃
+  cardRow: {
     flexDirection: "row",
-    gap: 20,
     justifyContent: "space-between",
     marginBottom: 20,
+  },
+  bigCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 12,
+    height: 200,
+    marginRight: 10,
+  },
+  smallCardColumn: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  smallCard: {
+    borderRadius: 16,
+    padding: 12,
+    height: 95,
+    marginBottom: 10,
   },
   card: {
     flex: 1,
@@ -367,11 +401,22 @@ const styles = StyleSheet.create({
   orange: {
     backgroundColor: "#B8D0FF",
   },
+  blue: {
+    backgroundColor: "#263A54",
+  },
   cardIllustration: {
     width: 77,
     height: 77,
     position: "absolute",
     top: 16,
+    right: 16,
+  },
+  // 🔽 버블 이미지만을 위한 새로운 스타일
+  bubbleIllustration: {
+    width: 50, // 기존 77에서 60으로 축소
+    height: 50, // 기존 77에서 60으로 축소
+    position: "absolute",
+    top: 20,
     right: 16,
   },
   cardTitle: {
