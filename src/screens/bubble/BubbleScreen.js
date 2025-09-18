@@ -118,7 +118,11 @@ export default function BubbleScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate("Home")}
+          style={styles.backButton}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
           <Image
             source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
             style={styles.icon}
@@ -203,15 +207,18 @@ const styles = StyleSheet.create({
   },
   header: {
     position: "absolute",
-    top: 10,
+    top: 50,
     left: 20,
     zIndex: 10,
-    marginTop: 20,
+  },
+  backButton: {
+    padding: 10,
   },
   icon: {
     width: 24,
     height: 24,
     resizeMode: "contain",
+    tintColor: "#fff",
   },
   bubbleWrapper: {
     position: "absolute",

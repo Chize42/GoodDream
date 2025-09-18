@@ -73,7 +73,7 @@ const MusicLikeScreen = ({ navigation }: { navigation: any }) => {
   ];
 
   const handleBackPress = () => {
-    navigation.goBack();
+    navigation.navigate('Music');
   };
 
   const handlePlayerPress = () => {
