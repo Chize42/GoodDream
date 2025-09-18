@@ -132,7 +132,7 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('SleepSchedule')}
         >
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>

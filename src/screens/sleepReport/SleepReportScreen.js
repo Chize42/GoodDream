@@ -306,7 +306,7 @@ const SleepReportScreen = ({ navigation, route }) => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 헤더 */}
         <View style={[globalStyles.header, sleepReportStyles.header]}>
-          <TouchableOpacity onPress={() => navigation?.goBack()}>
+          <TouchableOpacity onPress={() => navigation?.navigate('Home')}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={globalStyles.headerTitle}>수면 리포트</Text>
