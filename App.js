@@ -43,6 +43,10 @@ import ChallengeStartScreen from "./src/screens/challenge/ChallengeStartScreen";
 // Bubble 관련 화면들 추가
 import BubbleScreen from "./src/screens/bubble/BubbleScreen";
 
+//Start Sleeping 관련 화면들 추가
+import Dismiss from "./src/screens/startsleeping/Dismiss";
+import Play from "./src/screens/startsleeping/Play";
+
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -102,6 +106,9 @@ export default function App() {
           />
           {/* Bubble 관련 화면들 */}
           <Stack.Screen name="Bubble" component={BubbleScreen} />
+          {/*Start Sleeping 관련 화면들*/}
+          <Stack.Screen name="Dismiss" component={Dismiss} />
+          <Stack.Screen name="Play" component={Play} />
         </Stack.Navigator>
       </NavigationContainer>
     </MusicProvider>
