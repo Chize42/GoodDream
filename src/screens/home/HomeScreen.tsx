@@ -245,7 +245,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
 
         <TouchableOpacity
           style={styles.startSleepingBtn}
-          onPress={() => navigation.navigate("Bubble")}
+          onPress={() => navigation.navigate("Play")}
         >
           <Image
             source={require("../../../assets/moon.png")}
