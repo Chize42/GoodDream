@@ -214,8 +214,8 @@ function HomeScreen({ navigation }: { navigation: any }) {
               source={require("../../../assets/alramOwl.png")}
               style={styles.cardIllustration}
             />
-            <Text style={styles.cardTitle}>알람설정</Text>
-            <Text style={styles.cardSubtitle}>ALARM</Text>
+            <Text style={styles.cardTitle}>스케쥴 설정</Text>
+            <Text style={styles.cardSubtitle}>SCHEDULE</Text>
           </TouchableOpacity>
 
           {/* 오른쪽 (사운드 + 버블) */}
@@ -226,7 +226,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
             >
               <Image
                 source={require("../../../assets/soundOwl.png")}
-                style={styles.cardIllustration}
+                style={styles.soundIllustration} // 사운드 이미지도 버블과 같은 크기로
               />
               <Text style={styles.cardTitleT}>사운드</Text>
               <Text style={styles.cardSubtitleT}>MUSIC</Text>
@@ -409,12 +409,20 @@ const styles = StyleSheet.create({
     height: 77,
     position: "absolute",
     top: 16,
-    right: 16,
+    right: 16, 
   },
-  // 🔽 버블 이미지만을 위한 새로운 스타일
+  // 🔽 사운드 이미지를 위한 새로운 스타일 (버블과 동일한 크기)
+  soundIllustration: {
+    width: 60, // 버블과 같은 크기
+    height: 60, // 버블과 같은 크기
+    position: "absolute",
+    top: 15,
+    right: 9,
+  },
+  // 🔽 버블 이미지를 위한 스타일
   bubbleIllustration: {
-    width: 50, // 기존 77에서 60으로 축소
-    height: 50, // 기존 77에서 60으로 축소
+    width: 50,
+    height: 50,
     position: "absolute",
     top: 20,
     right: 16,
