@@ -4,12 +4,11 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView } from 'r
 
 const Dismiss  = ({ navigation }) => {
   return (
-    // LinearGradient 대신 일반 View 컴포넌트를 사용하고, 배경색을 지정합니다.
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {/* 뒤로가기 버튼 */}
         <TouchableOpacity 
-      style={styles.backButton} // ✨ 이 스타일을 적용하세요!
+      style={styles.backButton}
       onPress={() => navigation.navigate("Home")}
     >
       <Image
@@ -62,23 +61,45 @@ const Dismiss  = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  // LinearGradient 대신 backgroundColor 속성을 지정합니다.
-  container: { flex: 1, backgroundColor: '#2E2217' }, 
-  safeArea: { flex: 1, alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { // ✨ 이 스타일을 추가하세요!
+  
+  container: { 
+    flex: 1, 
+    backgroundColor: '#2E2217' 
+  }, 
+  safeArea: { 
+    flex: 1, 
+    alignItems: 'center', 
+    justifyContent: 'space-between' 
+  },
+  backButton: {
     position: 'absolute',
     top: 50,
     left: 20,
-    zIndex: 1, // 다른 요소들 위에 보이게 함
+    zIndex: 1, 
   },
- icon: { // 뒤로가기 아이콘 스타일
+ icon: { 
     width: 24,
     height: 24,
     resizeMode: 'contain',
   },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' },
-  owlImage: { width: 120, height: 120, resizeMode: 'contain', marginBottom: 30 },
-  wakeUpTitle: { color: 'white', fontSize: 24, fontWeight: 'bold', marginBottom: 40 },
+  content: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    width: '100%' 
+  },
+  owlImage: { 
+    width: 120, 
+    height: 120, 
+    resizeMode: 'contain', 
+    marginBottom: 30 
+  },
+  wakeUpTitle: { 
+    color: 'white', 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginBottom: 40 
+  },
   statsCard: {
     flexDirection: 'row',
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -88,17 +109,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
   },
-  statItem: { flex: 1, alignItems: 'center' },
-  statHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  statIcon: { width: 16, height: 16, marginRight: 8, tintColor: '#A9A9A9' },
-  statLabel: { color: '#A9A9A9', fontSize: 16 },
-  statValue: { color: 'white', fontSize: 22, fontWeight: 'bold' },
-  divider: { width: 1, height: '80%', backgroundColor: '#555' },
-  qualityCircleOuter: {
-    width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: '#3b82f6',
-    justifyContent: 'center', alignItems: 'center', marginRight: 8,
+  statItem: { 
+    flex: 1, 
+    alignItems: 'center' 
   },
-  qualityCircleInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' },
+  statHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 10 
+  },
+  statIcon: { 
+    width: 16, 
+    height: 16, 
+    marginRight: 8, 
+    tintColor: '#A9A9A9' 
+  },
+  statLabel: { 
+    color: '#A9A9A9', 
+    fontSize: 16 
+  },
+  statValue: { 
+    color: 'white', 
+    fontSize: 22, 
+    fontWeight: 'bold' 
+  },
+  divider: { 
+    width: 1, 
+    height: '80%', 
+    backgroundColor: '#555' 
+  },
+  qualityCircleOuter: {
+    width: 16, 
+    height: 16, 
+    borderRadius: 8, 
+    borderWidth: 1.5, 
+    borderColor: '#3b82f6',
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 8,
+  },
+  qualityCircleInner: { 
+    width: 8, 
+    height: 8, 
+    borderRadius: 4, 
+    backgroundColor: '#3b82f6' 
+  },
   dismissButton: {
     backgroundColor: '#3b82f6',
     paddingVertical: 18,
@@ -107,7 +162,11 @@ const styles = StyleSheet.create({
     width: '85%',
     marginBottom: 40,
   },
-  dismissButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  dismissButtonText: { 
+    color: 'white', 
+    fontSize: 18, 
+    fontWeight: 'bold' 
+  },
 });
 
 export default Dismiss;
