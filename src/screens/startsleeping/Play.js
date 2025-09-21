@@ -31,7 +31,7 @@ const Play = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* 1. 뒤로가기 버튼 */}
       <TouchableOpacity 
-      style={styles.backButton} // ✨ 이 스타일을 적용하세요!
+      style={styles.backButton}
       onPress={() => navigation.navigate("Home")}
     >
       <Image
@@ -91,7 +91,7 @@ const Play = ({ navigation }) => {
       {/* 7. Stop Sleeping 버튼 */}
       <TouchableOpacity 
       style={styles.stopButton}
-      onPress={() => navigation.navigate('Dismiss')} // 이 부분을 추가/수정합니다.
+      onPress={() => navigation.navigate('Dismiss')}
     >
         <Image source={{ uri: 'https://i.ibb.co/ccMZ5kbK/pausebutton.png' }} style={styles.stopIcon} />
         <Text style={styles.stopButtonText}>Stop Sleeping</Text>
@@ -130,45 +130,170 @@ const Play = ({ navigation }) => {
 // 스타일시트
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212', alignItems: 'center' },
-  backButton: { // ✨ 이 스타일을 추가하세요!
+  backButton: { 
     position: 'absolute',
     top: 50,
     left: 20,
-    zIndex: 1, // 다른 요소들 위에 보이게 함
+    zIndex: 1, 
   },
-  icon: { // 뒤로가기 아이콘 스타일
+  icon: { 
     width: 24,
     height: 24,
     resizeMode: 'contain',
   },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' },
-  owlImage: { width: 150, height: 150, resizeMode: 'contain', marginBottom: 40 },
-  musicInfoContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  musicIcon: { width: 20, height: 20, tintColor: 'gray', marginRight: 8 },
-  musicTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  musicCategory: { color: 'gray', fontSize: 18 },
-  playPauseButton: { width: 60, height: 60, resizeMode: 'contain', marginVertical: 20 },
-  timerContainer: { alignItems: 'center', marginVertical: 10 },
-  timerSelector: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#555', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 12, width: 250, justifyContent: 'space-between' },
-  timerText: { color: '#ccc', fontSize: 16 },
-  arrowIcon: { width: 12, height: 12, tintColor: '#ccc' },
-  timerOptions: { marginTop: 10, width: 250 },
-  timerOptionText: { color: '#4A90E2', fontSize: 16, paddingVertical: 8, textAlign: 'center' },
-  wakeUpContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 30 },
-  sunIcon: { width: 20, height: 20, marginRight: 8, tintColor: '#FFD700' },
-  wakeUpText: { color: '#ccc', fontSize: 16 },
-  stopButton: { flexDirection: 'row', backgroundColor: '#4A90E2', paddingVertical: 18, paddingHorizontal: 30, borderRadius: 30, alignItems: 'center', justifyContent: 'center', width: '80%', marginBottom: 40 },
-  stopIcon: { width: 20, height: 20, marginRight: 10, tintColor: 'white' },
-  stopButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  // Modal Styles
-  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
-  modalContent: { backgroundColor: '#222', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, height: '60%' },
-  musicListItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
-  musicListIcon: { width: 24, height: 24, tintColor: '#888', marginRight: 15 },
-  musicListTitle: { color: 'white', fontSize: 16 },
-  musicListCategory: { color: '#888', fontSize: 16 },
-  modalCloseButton: { backgroundColor: '#333', borderRadius: 15, padding: 15, alignItems: 'center', marginTop: 20 },
-  modalCloseButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  content: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    width: '100%' 
+  },
+  owlImage: { 
+    width: 150, 
+    height: 150, 
+    resizeMode: 'contain', 
+    marginBottom: 40 
+  },
+  musicInfoContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  musicIcon: { 
+    width: 20, 
+    height: 20, 
+    tintColor: 'gray', 
+    marginRight: 8 
+  },
+  musicTitle: { 
+    color: 'white', 
+    fontSize: 18, 
+    fontWeight: 'bold' 
+  },
+  musicCategory: { 
+    color: 'gray', 
+    fontSize: 18 
+  },
+  playPauseButton: { 
+    width: 60, 
+    height: 60, 
+    resizeMode: 'contain', 
+    marginVertical: 20 
+  },
+  timerContainer: { 
+    alignItems: 'center', 
+    marginVertical: 10 
+  },
+  timerSelector: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: '#555', 
+    borderRadius: 8, 
+    paddingHorizontal: 20, 
+    paddingVertical: 12, 
+    width: 250, 
+    justifyContent: 'space-between' 
+  },
+  timerText: { 
+    color: '#ccc', 
+    fontSize: 16 
+  },
+  arrowIcon: { 
+    width: 12, 
+    height: 12, 
+    tintColor: '#ccc' 
+  },
+  timerOptions: { 
+    marginTop: 10, 
+    width: 250 
+  },
+  timerOptionText: { 
+    color: '#4A90E2', 
+    fontSize: 16, 
+    paddingVertical: 8, 
+    textAlign: 'center' 
+  },
+  wakeUpContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 30 
+  },
+  sunIcon: { 
+    width: 20, 
+    height: 20, 
+    marginRight: 8, 
+    tintColor: '#FFD700' 
+  },
+  wakeUpText: { 
+    color: '#ccc', 
+    fontSize: 16 
+  },
+  stopButton: { 
+    flexDirection: 'row', 
+    backgroundColor: '#4A90E2', 
+    paddingVertical: 18, 
+    paddingHorizontal: 30, 
+    borderRadius: 30, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    width: '80%', 
+    marginBottom: 40 
+  },
+  stopIcon: { 
+    width: 20, 
+    height: 20, 
+    marginRight: 10, 
+    tintColor: 'white' 
+  },
+  stopButtonText: { 
+    color: 'white', 
+    fontSize: 18, 
+    fontWeight: 'bold' 
+  },
+
+  modalContainer: { 
+    flex: 1, 
+    justifyContent: 'flex-end', 
+    backgroundColor: 'rgba(0,0,0,0.7)' 
+  },
+  modalContent: { 
+    backgroundColor: '#222', 
+    borderTopLeftRadius: 20, 
+    borderTopRightRadius: 20, 
+    padding: 20, 
+    height: '60%' 
+  },
+  musicListItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingVertical: 15 
+  },
+  musicListIcon: { 
+    width: 24, 
+    height: 24, 
+    tintColor: '#888', 
+    marginRight: 15 
+  },
+  musicListTitle: { 
+    color: 'white', 
+    fontSize: 16 
+  },
+  musicListCategory: { 
+    color: '#888', 
+    fontSize: 16 
+  },
+  modalCloseButton: { 
+    backgroundColor: '#333', 
+    borderRadius: 15, 
+    padding: 15, 
+    alignItems: 'center', 
+    marginTop: 20 
+  },
+  modalCloseButtonText: { 
+    color: 'white', 
+    fontSize: 16, 
+    fontWeight: 'bold' 
+  },
 });
 
 export default Play;

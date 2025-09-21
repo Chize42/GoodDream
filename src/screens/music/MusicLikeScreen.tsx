@@ -1,8 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
-
-import React from "react";
+import React, { useState } from "react";
 import {
-  Dimensions,
   FlatList,
   Image,
   SafeAreaView,
@@ -11,51 +8,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useMusicContext } from "../../contexts/MusicContext";
+import { usePlaylistContext, Playlist } from "../../contexts/PlaylistContext";
 
-interface Playlist {
-  title: string;
-  tracks: number;
-}
-
-interface SoundItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  category: string;
-  image: any;
-  isPlaying?: boolean;
-}
-
-const BottomPlayer = ({
-  currentSound,
-  isPlaying,
-  onPlayPause,
-  onPlayerPress,
-}: {
-  currentSound: SoundItem;
-  isPlaying: boolean;
-  onPlayPause: () => void;
-  onPlayerPress: () => void;
-}) => (
+const BottomPlayer = ({ currentSound, isPlaying, onPlayPause, onPlayerPress }: any) => (
   <TouchableOpacity style={styles.bottomPlayer} onPress={onPlayerPress}>
     <View style={styles.playerContent}>
       <Image source={currentSound.image} style={styles.playerImage} />
       <View style={styles.playerInfo}>
-        <Text style={styles.playerTitle} numberOfLines={1}>
-          {currentSound.title}
-        </Text>
-        <Text style={styles.playerSubtitle} numberOfLines={1}>
-          {currentSound.subtitle}
-        </Text>
+        <Text style={styles.playerTitle} numberOfLines={1}>{currentSound.title}</Text>
+        <Text style={styles.playerSubtitle} numberOfLines={1}>{currentSound.subtitle}</Text>
       </View>
-      <TouchableOpacity
-        style={styles.playerPlayButton}
-        onPress={(e) => {
-          e.stopPropagation();
-          onPlayPause();
-        }}
-      >
+      <TouchableOpacity style={styles.playerPlayButton} onPress={(e) => { e.stopPropagation(); onPlayPause(); }}>
         <Ionicons name={isPlaying ? "pause" : "play"} size={20} color="#fff" />
       </TouchableOpacity>
     </View>
@@ -64,77 +29,58 @@ const BottomPlayer = ({
 
 const MusicLikeScreen = ({ navigation }: { navigation: any }) => {
   const { currentSound, isPlaying, togglePlayPause } = useMusicContext();
+  const { playlists, deletePlaylist } = usePlaylistContext();
 
-  const myPlaylists: Playlist[] = [
-    { title: "내 찜1", tracks: 3 },
-    { title: "내 찜2", tracks: 10 },
-    { title: "내 찜3", tracks: 10 },
-    { title: "내 찜4", tracks: 10 },
-  ];
-
-  const handleBackPress = () => {
-    navigation.navigate('Music');
-  };
+  const [isEditing, setIsEditing] = useState(false);
 
   const handlePlayerPress = () => {
     if (currentSound) {
-      navigation.navigate("MusicPlayer", {
-        id: currentSound.id,
-        title: currentSound.title,
-        subtitle: currentSound.subtitle,
-      });
+      navigation.navigate("MusicPlayer", { ...currentSound });
     }
   };
 
-  const renderPlaylistItem = ({
-    item,
-    index,
-  }: {
-    item: Playlist;
-    index: number;
-  }) => (
+  const renderPlaylistItem = ({ item }: { item: Playlist }) => (
     <TouchableOpacity
       style={styles.playlistItem}
-      onPress={() => navigation.navigate("MusicLikeDetail")}
+      onPress={() => {
+        if (!isEditing) {
+          navigation.navigate("MusicLikeDetail", { playlistId: item.id });
+        }
+      }}
     >
       <View style={styles.thumbnail} />
       <View style={styles.playlistInfo}>
         <Text style={styles.playlistTitle}>{item.title}</Text>
-        <Text style={styles.playlistTrack}>{`트랙 ${item.tracks}개`}</Text>
+        <Text style={styles.playlistTrack}>{`트랙 ${item.tracks.length}개`}</Text>
       </View>
+      {isEditing && (
+        <TouchableOpacity style={styles.deleteButton} onPress={() => deletePlaylist(item.id)}>
+          <Image source={{ uri: 'https://i.ibb.co/Psx5Wm4Q/mynaui-trash.png' }} style={styles.deleteIcon} />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBackPress}
-            style={styles.backButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="white" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>즐겨찾기</Text>
-          <View style={styles.rightSpacer} />
+          <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(!isEditing)}>
+            <Text style={styles.editButtonText}>{isEditing ? "완료" : "수정"}</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Playlist List */}
         <FlatList
-          data={myPlaylists}
+          data={playlists}
           renderItem={renderPlaylistItem}
-          keyExtractor={(item, index) => index.toString()}
-          style={styles.playlistList}
-          contentContainerStyle={
-            currentSound ? styles.scrollContentWithPlayer : styles.scrollContent
-          }
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: currentSound ? 100 : 20 }}
           showsVerticalScrollIndicator={false}
         />
       </View>
-
-      {/* Bottom Player */}
       {currentSound && (
         <BottomPlayer
           currentSound={currentSound}
@@ -147,122 +93,117 @@ const MusicLikeScreen = ({ navigation }: { navigation: any }) => {
   );
 };
 
-const { width } = Dimensions.get("window");
-const maxWidth = Math.min(width, 400);
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#181820",
-    alignSelf: "center",
-    width: maxWidth,
+  container: { 
+    flex: 1, 
+    backgroundColor: "#181820" 
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+  content: { 
+    flex: 1, 
+    paddingHorizontal: 16, 
+    paddingTop: 20 
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 4,
-    marginBottom: 24,
-    position: "relative",
+  header: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between", 
+    marginBottom: 24 
   },
-  headerTitle: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "white",
-    zIndex: 1,
+  backButton: { 
+    padding: 8, 
+    zIndex: 1 
   },
-  playlistList: {
-    flex: 1,
+  headerTitle: { 
+    position: 'absolute', 
+    left: 0, 
+    right: 0, 
+    textAlign: 'center', 
+    fontSize: 18, 
+    fontWeight: "bold", 
+    color: "white" 
   },
-  scrollContent: {
-    paddingBottom: 20,
+  editButton: { 
+    padding: 8, 
+    zIndex: 1 
   },
-  scrollContentWithPlayer: {
-    paddingBottom: 100,
+  editButtonText: { 
+    color: "#007aff", 
+    fontSize: 16 
   },
-  playlistItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
+  playlistItem: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginBottom: 20, 
+    paddingHorizontal: 4 
   },
-  thumbnail: {
-    width: 56,
-    height: 56,
-    backgroundColor: "#222",
-    borderRadius: 6,
-    marginRight: 12,
+  thumbnail: { 
+    width: 56, 
+    height: 56, 
+    backgroundColor: "#2A2A2A", 
+    borderRadius: 6, 
+    marginRight: 12 
   },
-  playlistInfo: {
-    flexDirection: "column",
-    flex: 1,
+  playlistInfo: { 
+    flex: 1 
   },
-  playlistTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 4,
+  playlistTitle: { 
+    fontSize: 16, 
+    fontWeight: "bold", 
+    color: "white", 
+    marginBottom: 4 
   },
-  playlistTrack: {
-    fontSize: 13,
-    color: "#aaa",
+  playlistTrack: { 
+    fontSize: 14, 
+    color: "#aaa" 
   },
-  backButton: {
-    padding: 8,
-    zIndex: 10,
+  deleteButton: { 
+    padding: 8 
   },
-  rightSpacer: {
-    width: 34, // backButton과 같은 크기로 균형 맞춤
+  deleteIcon: { 
+    width: 24, 
+    height: 24 
   },
-  bottomPlayer: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#007AFF",
+  bottomPlayer: { 
+    position: "absolute", 
+    bottom: 20, 
+    left: 20, 
+    right: 20, 
+    backgroundColor: "#1a1a1a", 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    borderColor: "#007AFF" 
   },
-  playerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
+  playerContent: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    padding: 12 
   },
-  playerImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    marginRight: 12,
+  playerImage: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 8, 
+    marginRight: 12 
   },
-  playerInfo: {
-    flex: 1,
+  playerInfo: { 
+    flex: 1 
   },
-  playerTitle: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 2,
+  playerTitle: { 
+    color: "#fff", 
+    fontSize: 14, 
+    fontWeight: "500", 
+    marginBottom: 2 
   },
-  playerSubtitle: {
-    color: "#9ca3af",
-    fontSize: 12,
+  playerSubtitle: { 
+    color: "#9ca3af", 
+    fontSize: 12 
   },
-  playerPlayButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 30,
-    backgroundColor: "#007AFF",
-    justifyContent: "center",
-    alignItems: "center",
+  playerPlayButton: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 30, 
+    backgroundColor: "#007AFF", 
+    justifyContent: "center", 
+    alignItems: "center" 
   },
 });
 

@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 
 // MusicProvider import 추가
 import { MusicProvider } from "./src/contexts/MusicContext";
+import { PlaylistProvider } from "./src/contexts/PlaylistContext";
 
 import IntroScreen from "./src/screens/auth/IntroScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
@@ -52,6 +53,7 @@ const Stack = createStackNavigator();
 export default function App() {
   return (
     <MusicProvider>
+    <PlaylistProvider>
       <NavigationContainer>
         <StatusBar style="light" />
         <Stack.Navigator
@@ -111,6 +113,7 @@ export default function App() {
           <Stack.Screen name="Play" component={Play} />
         </Stack.Navigator>
       </NavigationContainer>
+      </PlaylistProvider>
     </MusicProvider>
   );
 }

@@ -1,147 +1,341 @@
-// app/MusicLikeDetail.tsx
-import { Feather, Ionicons } from "@expo/vector-icons";
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Image,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  TextInput,
+  Modal,
+  Alert,
 } from "react-native";
-import deepSpaceImage from "../../../assets/images/deep-space.jpg";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { usePlaylistContext } from "../../contexts/PlaylistContext";
+import { useMusicContext } from "../../contexts/MusicContext";
 
-export default function MusicLikeDetailScreen({
-  navigation,
-}: {
-  navigation: any;
-}) {
-  const tracks = [
-    {
-      id: 1,
-      title: "우주의 탄생",
-      artist: "EBS",
-      image: deepSpaceImage,
-    },
-    {
-      id: 2,
-      title: "우주의 탄생",
-      artist: "EBS",
-      image: deepSpaceImage,
-    },
-    {
-      id: 3,
-      title: "우주의 탄생",
-      artist: "EBS",
-      image: deepSpaceImage,
-    },
-  ];
+const BottomPlayer = ({ currentSound, isPlaying, onPlayPause, onPlayerPress }: any) => (
+  <TouchableOpacity style={styles.bottomPlayer} onPress={onPlayerPress}>
+    <View style={styles.playerContent}>
+      <Image source={currentSound.image} style={styles.playerImage} />
+      <View style={styles.playerInfo}>
+        <Text style={styles.playerTitle} numberOfLines={1}>{currentSound.title}</Text>
+        <Text style={styles.playerSubtitle} numberOfLines={1}>{currentSound.subtitle}</Text>
+      </View>
+      <TouchableOpacity style={styles.playerPlayButton} onPress={(e) => { e.stopPropagation(); onPlayPause(); }}>
+        <Ionicons name={isPlaying ? "pause" : "play"} size={20} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  </TouchableOpacity>
+);
+
+
+export default function MusicLikeDetailScreen({ navigation, route }: { navigation: any; route: any; }) {
+  const { playlistId } = route.params;
+  const { playlists, renamePlaylist, removeTrackFromPlaylist } = usePlaylistContext();
+  
+  const { playPlaylist, currentSound, isPlaying, togglePlayPause } = useMusicContext();
+
+  const playlist = playlists.find((p) => p.id === playlistId);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isRenameModalVisible, setRenameModalVisible] = useState(false);
+  const [newTitle, setNewTitle] = useState(playlist?.title || "");
+
+  useEffect(() => {
+    if (!playlist) {
+      navigation.goBack();
+    } else {
+      setNewTitle(playlist.title);
+    }
+  }, [playlists, playlist, navigation]);
+
+  if (!playlist) return null;
+
+  const handleSave = () => {
+    setIsEditing(false);
+  };
+  
+  const handleRenameRequest = () => {
+    setNewTitle(playlist.title);
+    setRenameModalVisible(true);
+  }
+  
+  const handleRenameConfirm = () => {
+    if (newTitle.trim().length > 0) {
+        renamePlaylist(playlist.id, newTitle.trim());
+        setRenameModalVisible(false);
+    } else {
+        Alert.alert("알림", "플레이리스트 이름은 한 글자 이상이어야 합니다.");
+    }
+  }
+
+  const handlePlayerPress = () => {
+    if (currentSound) {
+      navigation.navigate("MusicPlayer", { ...currentSound });
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      {/* 뒤로가기 */}
-      <TouchableOpacity
-        style={styles.backBtn}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="chevron-back" size={26} color="#fff" />
-      </TouchableOpacity>
-
-      {/* 앨범 이미지 */}
-      <View style={styles.cover} />
-
-      {/* 제목 + 수정 + 트랙개수 */}
-      <View style={styles.titleSection}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>내 찜1</Text>
-          <TouchableOpacity>
-            <Feather
-              name="edit-2"
-              size={18}
-              color="#fff"
-              style={styles.editIcon}
-            />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.trackCount}>트랙 3개</Text>
+    <SafeAreaView style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={26} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.headerButton} onPress={() => isEditing ? handleSave() : setIsEditing(true)}>
+          <Text style={styles.headerButtonText}>{isEditing ? "완료" : "수정"}</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* 트랙 리스트 */}
-      <ScrollView style={{ marginTop: 20 }}>
-        {tracks.map((track) => (
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: currentSound ? 100 : 20 }}
+      >
+        {/* 앨범 커버 (상단 중앙) */}
+        <View style={styles.coverWrapper}>
+          <View style={styles.coverArtContainer}>
+            {playlist.tracks.length > 0 ? (
+              <Image source={playlist.tracks[0].image} style={styles.coverArt} />
+            ) : <View style={styles.coverArt} />}
+          </View>
+        </View>
+
+        {/* 플레이리스트 정보 및 재생 버튼 (커버 아래) */}
+        <View style={styles.infoSection}>
+          <View style={styles.detailsContainer}>
+              <View style={styles.titleRow}>
+                  <Text style={styles.titleText} numberOfLines={1}>{playlist.title}</Text>
+                  {isEditing && (
+                      <TouchableOpacity onPress={handleRenameRequest}>
+                          <Feather name="edit-2" size={18} color="#aaa" style={styles.editIcon}/>
+                      </TouchableOpacity>
+                  )}
+              </View>
+              <Text style={styles.trackCountText}>{`트랙 ${playlist.tracks.length}개`}</Text>
+          </View>
+          <TouchableOpacity style={styles.playAllButton} onPress={() => playPlaylist(playlist.tracks)}>
+              <Image source={{ uri: 'https://i.ibb.co/kskcvQm2/Group-6920.png' }} style={styles.playAllIcon} />
+          </TouchableOpacity>
+        </View>
+
+        {/* 트랙 리스트 */}
+        {playlist.tracks.map((track) => (
           <View key={track.id} style={styles.trackItem}>
             <Image source={track.image} style={styles.trackImage} />
-            <View>
+            <View style={styles.trackInfo}>
               <Text style={styles.trackTitle}>{track.title}</Text>
-              <Text style={styles.trackArtist}>{track.artist}</Text>
+              <Text style={styles.trackArtist}>{track.subtitle}</Text>
             </View>
+            {isEditing && (
+              <TouchableOpacity onPress={() => removeTrackFromPlaylist(playlist.id, track.id)}>
+                <Image source={{ uri: 'https://i.ibb.co/Psx5Wm4Q/mynaui-trash.png' }} style={styles.deleteIcon} />
+              </TouchableOpacity>
+            )}
           </View>
         ))}
       </ScrollView>
-    </View>
+
+      {currentSound && (
+        <BottomPlayer
+          currentSound={currentSound}
+          isPlaying={isPlaying}
+          onPlayPause={togglePlayPause}
+          onPlayerPress={handlePlayerPress}
+        />
+      )}
+      
+      {/* 이름 변경 모달 */}
+      <Modal visible={isRenameModalVisible} transparent={true} animationType="fade">
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#181820",
-    paddingTop: 40,
-  },
-  backBtn: {
-    position: "absolute",
-    top: 40,
-    left: 20,
-    zIndex: 10,
-  },
-  cover: {
-    width: "60%",
-    aspectRatio: 1,
-    backgroundColor: "#2A2A2A",
-    borderRadius: 8,
-    marginTop: 40,
-    alignSelf: "center",
-  },
-  titleSection: {
-    alignItems: "center", // 가운데 정렬
-    marginTop: 15,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  title: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  editIcon: {
-    marginLeft: 8,
-  },
-  trackCount: {
-    color: "#aaa",
-    fontSize: 14,
-    marginTop: 4,
-  },
-  trackItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-    paddingHorizontal: 20,
-  },
-  trackImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 4,
-    marginRight: 12,
-  },
-  trackTitle: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  trackArtist: {
-    color: "#aaa",
-    fontSize: 14,
-  },
+    container: { 
+      flex: 1, 
+      backgroundColor: "#181820" 
+    },
+    header: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center', 
+      paddingHorizontal: 16, 
+      paddingTop: 10, 
+      paddingBottom: 10 
+    },
+    headerButton: { 
+      padding: 8 
+    },
+    headerButtonText: { 
+      color: '#007aff', 
+      fontSize: 16 
+    },
+    coverWrapper: { 
+      alignItems: 'center',
+      marginVertical: 20 
+    },
+    coverArtContainer: { 
+      width: '70%', 
+      aspectRatio: 1 
+    },
+    coverArt: { 
+      width: '100%', 
+      height: '100%', 
+      borderRadius: 8, 
+      backgroundColor: '#2A2A2A' 
+    },
+    infoSection: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'space-between', 
+      paddingHorizontal: 20, 
+      marginBottom: 30, 
+      marginHorizontal: 35, 
+    },
+    detailsContainer: { 
+      flex: 1 
+    },
+    titleRow: { 
+      flexDirection: 'row', 
+      alignItems: 'center'
+     },
+    titleText: { 
+      color: '#fff', 
+      fontSize: 24, 
+      fontWeight: 'bold' 
+    },
+    editIcon: { 
+      marginLeft: 8 
+    },
+    trackCountText: { 
+      color: '#aaa', 
+      fontSize: 14, 
+      marginTop: 6 
+    },
+    playAllButton: { 
+      marginLeft: 16 
+    },
+    trackItem: { 
+      flexDirection: "row", 
+      alignItems: "center", 
+      marginBottom: 15, 
+      paddingHorizontal: 20 
+    },
+    trackImage: { 
+      width: 50, 
+      height: 50, 
+      borderRadius: 4, 
+      marginRight: 12 
+    },
+    trackInfo: { 
+      flex: 1 
+    },
+    trackTitle: { 
+      color: "#fff", 
+      fontSize: 16 
+    },
+    trackArtist: { 
+      color: "#aaa", 
+      fontSize: 14 
+    },
+    deleteIcon: { 
+      width: 24, 
+      height: 24 
+    },
+
+    modalOverlay: { 
+      flex: 1, 
+      backgroundColor: 'rgba(0,0,0,0.7)', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      paddingHorizontal: 20 
+    },
+    modalContent: { 
+      backgroundColor: '#2c2c34', 
+      borderRadius: 14, 
+      padding: 20, 
+      width: '100%' 
+    },
+    modalTitle: { 
+      color: '#fff', 
+      fontSize: 18, 
+      fontWeight: 'bold', 
+      textAlign: 'center', 
+      marginBottom: 15 
+    },
+    modalInput: { 
+      backgroundColor: '#1e1e25', 
+      color: '#fff', 
+      borderRadius: 8, 
+      padding: 10, 
+      fontSize: 16, 
+      marginBottom: 20 
+    },
+    modalActions: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between' 
+    },
+    modalButton: { 
+      flex: 1, 
+      padding: 12, 
+      borderRadius: 8, 
+      alignItems: 'center' 
+    },
+    modalConfirmButton: { 
+      backgroundColor: '#007aff' 
+    },
+    modalButtonText: { 
+      color: '#007aff', 
+      fontSize: 16 
+    },
+    modalConfirmButtonText: { 
+      color: '#fff', 
+      fontWeight: 'bold' 
+    },
+
+    bottomPlayer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        right: 20,
+        backgroundColor: '#1a1a1a',
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#007AFF',
+      },
+      playerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+      },
+      playerImage: {
+        width: 48,
+        height: 48,
+        borderRadius: 8,
+        marginRight: 12,
+      },
+      playerInfo: {
+        flex: 1,
+      },
+      playerTitle: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '500',
+        marginBottom: 2,
+      },
+      playerSubtitle: {
+        color: '#9ca3af',
+        fontSize: 12,
+      },
+      playerPlayButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 30,
+        backgroundColor: '#007AFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      playAllIcon: { width: 60, height: 60 },
 });
