@@ -25,7 +25,6 @@ import SleepDetailScreen from "./src/screens/sleepReport/SleepDetailScreen";
 import SettingsScreen from "./src/screens/settings/SettingsScreen";
 import AccountScreen from "./src/screens/settings/AccountScreen";
 import EditAccountScreen from "./src/screens/settings/EditAccountScreen";
-import NotificationScreen from "./src/screens/settings/NotificationScreen";
 import LinkScreen from "./src/screens/settings/LinkScreen";
 import CustomerScreen from "./src/screens/settings/CustomerScreen";
 import ServiceInquiryScreen from "./src/screens/settings/ServiceInquiryScreen";
@@ -81,7 +80,6 @@ export default function App() {
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="계정 센터" component={AccountScreen} />
           <Stack.Screen name="EditAccount" component={EditAccountScreen} />
-          <Stack.Screen name="알림" component={NotificationScreen} />
           <Stack.Screen name="계정 연동" component={LinkScreen} />
           <Stack.Screen name="고객센터" component={CustomerScreen} />
           <Stack.Screen

@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Notifications from "expo-notifications";
 import {
   getSleepSchedules,
   deleteSleepSchedules,
@@ -18,6 +19,13 @@ import {
   saveSleepSchedule,
   updateSleepSchedule,
 } from "../../services/sleepScheduleService";
+import {
+  sendTestNotification,
+  getScheduledNotifications,
+  cancelAllScheduleNotifications,
+  requestNotificationPermissions,
+} from "../../services/localNotificationService";
+import { formatDaysString } from "../../utils/dayUtils";
 
 const SleepScheduleScreen = ({ navigation, route }) => {
   const [isMainSleepEnabled, setIsMainSleepEnabled] = useState(true);
@@ -29,21 +37,20 @@ const SleepScheduleScreen = ({ navigation, route }) => {
   // 임시 사용자 ID (실제 앱에서는 인증 시스템에서 가져와야 함)
   const userId = "user123";
 
-  // 컴포넌트 마운트 시 데이터 로드
+  // 컴포넌트 마운트 시 데이터 로드 및 알림 설정
   useEffect(() => {
     loadSchedules();
+    initializeNotifications();
   }, []);
 
   // 새로운 스케줄이나 편집된 스케줄이 있을 때 처리
   useEffect(() => {
     if (route.params?.newSchedule) {
       handleNewSchedule(route.params.newSchedule);
-      // 파라미터 클리어
       navigation.setParams({ newSchedule: null });
     }
     if (route.params?.editedSchedule) {
       handleEditedSchedule(route.params.editedSchedule);
-      // 파라미터 클리어
       navigation.setParams({ editedSchedule: null });
     }
   }, [route.params]);
@@ -61,10 +68,28 @@ const SleepScheduleScreen = ({ navigation, route }) => {
     }
   };
 
+  const initializeNotifications = async () => {
+    try {
+      // 현재 권한 상태 먼저 확인
+      const { status } = await Notifications.getPermissionsAsync();
+      console.log("현재 알림 권한 상태:", status);
+
+      if (status !== "granted") {
+        await requestNotificationPermissions();
+      }
+
+      console.log("알림 권한 확인 완료");
+    } catch (error) {
+      console.error("알림 권한 확인 실패:", error);
+      Alert.alert("알림 설정", "알림 권한 설정에 실패했습니다.");
+    }
+  };
+
   const handleNewSchedule = async (newSchedule) => {
     try {
       const savedSchedule = await saveSleepSchedule(newSchedule, userId);
       setSleepSchedules((prev) => [savedSchedule, ...prev]);
+      Alert.alert("성공", "스케줄이 저장되고 알림이 설정되었습니다!");
     } catch (error) {
       Alert.alert("오류", "스케줄 저장에 실패했습니다.");
       console.error("스케줄 저장 실패:", error);
@@ -83,6 +108,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
           schedule.id === editedSchedule.id ? updatedSchedule : schedule
         )
       );
+      Alert.alert("성공", "스케줄이 수정되고 알림이 재설정되었습니다!");
     } catch (error) {
       Alert.alert("오류", "스케줄 수정에 실패했습니다.");
       console.error("스케줄 수정 실패:", error);
@@ -105,6 +131,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
   const deleteSelectedItems = async () => {
     try {
       setIsLoading(true);
+
       await deleteSleepSchedules(selectedItems, userId);
       setSleepSchedules(
         sleepSchedules.filter(
@@ -120,6 +147,8 @@ const SleepScheduleScreen = ({ navigation, route }) => {
       ) {
         setIsDeleteMode(false);
       }
+
+      Alert.alert("성공", "선택한 스케줄이 삭제되고 알림이 취소되었습니다.");
     } catch (error) {
       Alert.alert("오류", "스케줄 삭제에 실패했습니다.");
       console.error("스케줄 삭제 실패:", error);
@@ -127,7 +156,6 @@ const SleepScheduleScreen = ({ navigation, route }) => {
       setIsLoading(false);
     }
   };
-
   const handleToggleScheduleEnabled = async (id) => {
     if (!isDeleteMode) {
       try {
@@ -137,10 +165,32 @@ const SleepScheduleScreen = ({ navigation, route }) => {
             schedule.id === id ? updatedSchedule : schedule
           )
         );
+
+        const statusText = updatedSchedule.enabled ? "활성화" : "비활성화";
+        Alert.alert("알림", `스케줄이 ${statusText}되었습니다.`);
       } catch (error) {
         Alert.alert("오류", "스케줄 설정 변경에 실패했습니다.");
         console.error("스케줄 토글 실패:", error);
       }
+    }
+  };
+  const handleMainSleepEnabledChange = async (value) => {
+    try {
+      setIsMainSleepEnabled(value);
+
+      if (value) {
+        // 메인 토글 켜기: 모든 스케줄 알림 재설정
+        await setupNotifications(userId);
+        Alert.alert("알림 활성화", "수면 스케줄 알림이 활성화되었습니다.");
+      } else {
+        // 메인 토글 끄기: 모든 알림 취소
+        await cancelAllScheduleNotifications();
+        Alert.alert("알림 비활성화", "모든 수면 알림이 비활성화되었습니다.");
+      }
+    } catch (error) {
+      console.error("메인 토글 처리 실패:", error);
+      Alert.alert("오류", "알림 설정 변경에 실패했습니다.");
+      setIsMainSleepEnabled(!value); // 원래 상태로 되돌리기
     }
   };
 
@@ -156,7 +206,6 @@ const SleepScheduleScreen = ({ navigation, route }) => {
 
   const handleSchedulePress = (schedule) => {
     if (!isDeleteMode && isMainSleepEnabled) {
-      // 편집 모드로 AddSleepScheduleScreen에 이동
       navigation.navigate("AddSleepSchedule", {
         editSchedule: schedule,
         existingSchedules: sleepSchedules,
@@ -165,10 +214,39 @@ const SleepScheduleScreen = ({ navigation, route }) => {
   };
 
   const handleAddSchedule = () => {
-    // AddSleepScheduleScreen으로 네비게이션하면서 기존 스케줄 정보도 전달
+    if (!isMainSleepEnabled) {
+      Alert.alert("알림", "먼저 수면 스케줄을 활성화해주세요.");
+      return;
+    }
+
     navigation.navigate("AddSleepSchedule", {
       existingSchedules: sleepSchedules,
     });
+  };
+
+  // 테스트 함수들
+  const handleTestNotification = async () => {
+    try {
+      await sendTestNotification();
+      Alert.alert("테스트", "2초 후 테스트 알림이 표시됩니다!");
+    } catch (error) {
+      Alert.alert("오류", "테스트 알림 전송에 실패했습니다.");
+      console.error("테스트 알림 오류:", error);
+    }
+  };
+
+  const checkScheduledNotifications = async () => {
+    try {
+      const notifications = await getScheduledNotifications();
+      console.log("현재 스케줄된 알림들:", notifications);
+      Alert.alert(
+        "알림 확인",
+        `현재 ${notifications.length}개의 알림이 스케줄되어 있습니다.`
+      );
+    } catch (error) {
+      Alert.alert("오류", "알림 확인에 실패했습니다.");
+      console.error("알림 확인 오류:", error);
+    }
   };
 
   return (
@@ -184,16 +262,38 @@ const SleepScheduleScreen = ({ navigation, route }) => {
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>수면 스케줄</Text>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={toggleDeleteMode}
-        >
-          <Ionicons
-            name="trash-outline"
-            size={24}
-            color={isDeleteMode ? "#007AFF" : "#fff"}
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity
+            onPress={handleTestNotification}
+            style={{ marginRight: 8, padding: 4 }}
+          >
+            <Text
+              style={{ color: "#007AFF", fontSize: 10, textAlign: "center" }}
+            >
+              테스트
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={checkScheduledNotifications}
+            style={{ marginRight: 8, padding: 4 }}
+          >
+            <Text
+              style={{ color: "#007AFF", fontSize: 10, textAlign: "center" }}
+            >
+              확인
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={toggleDeleteMode}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={24}
+              color={isDeleteMode ? "#007AFF" : "#fff"}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -214,7 +314,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
               </View>
               <Switch
                 value={isMainSleepEnabled}
-                onValueChange={setIsMainSleepEnabled}
+                onValueChange={handleMainSleepEnabledChange}
                 trackColor={{ false: "#3A3A3C", true: "#007AFF" }}
                 thumbColor="#fff"
               />
@@ -279,7 +379,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
                           !isMainSleepEnabled && styles.disabledSubtitle,
                         ]}
                       >
-                        {schedule.days ? schedule.days.join(", ") : "일"}
+                        {formatDaysString(schedule.days)}
                       </Text>
                     </View>
                     {!isDeleteMode && (
@@ -519,7 +619,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
-  // 비활성화 스타일들
   disabledScheduleItem: {
     backgroundColor: "#1a1a1a",
     opacity: 0.6,
