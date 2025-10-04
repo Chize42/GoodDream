@@ -77,6 +77,11 @@ export default function MusicLikeDetailScreen({ navigation, route }: { navigatio
     }
   };
 
+  const handleShufflePlay = () => {
+    const shuffled = [...playlist.tracks].sort(() => Math.random() - 0.5);
+    playPlaylist(shuffled);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* 헤더 */}
@@ -101,7 +106,7 @@ export default function MusicLikeDetailScreen({ navigation, route }: { navigatio
           </View>
         </View>
 
-        {/* 플레이리스트 정보 및 재생 버튼 (커버 아래) */}
+        {/* 플레이리스트 정보 (커버 아래) */}
         <View style={styles.infoSection}>
           <View style={styles.detailsContainer}>
               <View style={styles.titleRow}>
@@ -114,8 +119,18 @@ export default function MusicLikeDetailScreen({ navigation, route }: { navigatio
               </View>
               <Text style={styles.trackCountText}>{`트랙 ${playlist.tracks.length}개`}</Text>
           </View>
-          <TouchableOpacity style={styles.playAllButton} onPress={() => playPlaylist(playlist.tracks)}>
-              <Image source={{ uri: 'https://i.ibb.co/kskcvQm2/Group-6920.png' }} style={styles.playAllIcon} />
+        </View>
+
+        {/* 재생 & 셔플 버튼 */}
+        <View style={styles.playButtonsContainer}>
+          <TouchableOpacity style={styles.playButton} onPress={() => playPlaylist(playlist.tracks)}>
+            <Ionicons name="play" size={20} color="#4074D8" />
+            <Text style={styles.playButtonText}>재생</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.playButton} onPress={handleShufflePlay}>
+            <Ionicons name="shuffle" size={20} color="#4074D8" />
+            <Text style={styles.playButtonText}>임의 재생</Text>
           </TouchableOpacity>
         </View>
 
@@ -147,6 +162,32 @@ export default function MusicLikeDetailScreen({ navigation, route }: { navigatio
       
       {/* 이름 변경 모달 */}
       <Modal visible={isRenameModalVisible} transparent={true} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>플레이리스트 이름 변경</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newTitle}
+              onChangeText={setNewTitle}
+              placeholder="새 이름 입력"
+              placeholderTextColor="#666"
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={styles.modalButton} 
+                onPress={() => setRenameModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalConfirmButton]} 
+                onPress={handleRenameConfirm}
+              >
+                <Text style={[styles.modalButtonText, styles.modalConfirmButtonText]}>확인</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -189,13 +230,12 @@ const styles = StyleSheet.create({
     infoSection: { 
       flexDirection: 'row', 
       alignItems: 'center', 
-      justifyContent: 'space-between', 
+      justifyContent: 'center', 
       paddingHorizontal: 20, 
-      marginBottom: 30, 
-      marginHorizontal: 35, 
+      marginBottom: 20,
     },
     detailsContainer: { 
-      flex: 1 
+      alignItems: 'center',
     },
     titleRow: { 
       flexDirection: 'row', 
@@ -214,8 +254,27 @@ const styles = StyleSheet.create({
       fontSize: 14, 
       marginTop: 6 
     },
-    playAllButton: { 
-      marginLeft: 16 
+    playButtonsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 12,
+      paddingHorizontal: 20,
+      marginBottom: 30,
+    },
+    playButton: {
+      width: 134,
+      height: 50,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(114, 114, 114, 0.12)',
+      borderRadius: 10,
+      gap: 8,
+    },
+    playButtonText: {
+      color: '#4074D8',
+      fontSize: 16,
+      fontWeight: '500',
     },
     trackItem: { 
       flexDirection: "row", 
