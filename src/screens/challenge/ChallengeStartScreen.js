@@ -9,6 +9,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ChallengeStartScreen({ route, navigation }) {
   const { totalDays } = route.params || {};
@@ -18,30 +19,88 @@ export default function ChallengeStartScreen({ route, navigation }) {
   const [completionModalVisible, setCompletionModalVisible] = useState(false);
   const [currentDay, setCurrentDay] = useState(1);
   const scrollViewRef = useRef(null);
-  const [owlLayoutY, setOwlLayoutY] = useState(0);
   const owlImg = "https://i.ibb.co/hxgqmQvL/image-1.png";
   const footprintImg = "https://i.ibb.co/xqYdhd5S/pngegg-1.png";
   const successOwlImg = "https://i.ibb.co/hJTLCHsf/Kakao-Talk-20250524-151947386-1.png";
 
+  // ⭐️ 저장된 챌린지 데이터 불러오기 및 스크롤
   useEffect(() => {
-    if (owlLayoutY > 0) {
-      setTimeout(() => {
-        const yOffset = owlLayoutY > 100 ? owlLayoutY - 100 : 0;
-        scrollViewRef.current?.scrollTo({ y: yOffset, animated: true });
-      }, 100);
-    }
-  }, [owlLayoutY]);
+    loadChallengeData();
+  }, []);
 
-  const handleNextDay = () => {
+  // currentDay가 변경되면 스크롤
+  useEffect(() => {
+    if (totalDays > 0) {
+      setTimeout(() => {
+        scrollToCurrentDay();
+      }, 300);
+    }
+  }, [currentDay, totalDays]);
+
+  const scrollToCurrentDay = () => {
+    if (scrollViewRef.current && totalDays > 0) {
+      // 역순으로 렌더링: totalDays부터 1까지 (위에서 아래로)
+      // currentDay가 증가하면 부엉이는 위로 올라감
+      // currentDay가 1이면 맨 아래에 있고, totalDays면 맨 위에 있음
+      // 스크롤도 부엉이를 따라서 위로 올라가야 함
+      const itemsFromTop = totalDays - currentDay;
+      const yPosition = itemsFromTop * 100; // dayContainer height = 100
+      
+      // 부엉이가 화면 중앙 정도에 오도록 조정
+      const adjustedPosition = Math.max(0, yPosition - 150);
+      scrollViewRef.current?.scrollTo({ y: adjustedPosition, animated: true });
+    }
+  };
+
+  const loadChallengeData = async () => {
+    try {
+      const challengeData = await AsyncStorage.getItem('challengeData');
+      if (challengeData) {
+        const { currentDay: savedDay } = JSON.parse(challengeData);
+        if (savedDay) {
+          setCurrentDay(savedDay);
+        }
+      }
+    } catch (error) {
+      console.error('챌린지 데이터 불러오기 오류:', error);
+    }
+  };
+
+  // ⭐️ 챌린지 데이터 업데이트
+  const updateChallengeData = async (newDay) => {
+    try {
+      const challengeData = await AsyncStorage.getItem('challengeData');
+      if (challengeData) {
+        const data = JSON.parse(challengeData);
+        data.currentDay = newDay;
+        await AsyncStorage.setItem('challengeData', JSON.stringify(data));
+      }
+    } catch (error) {
+      console.error('챌린지 데이터 업데이트 오류:', error);
+    }
+  };
+
+  const handleNextDay = async () => {
     if (currentDay > totalDays) return;
 
     const nextDay = currentDay + 1;
     setCurrentDay(nextDay);
+    await updateChallengeData(nextDay);
 
     if (nextDay > totalDays) {
       setCompletionModalVisible(true);
     } else {
       setSuccessModalVisible(true);
+    }
+  };
+
+  // ⭐️ 챌린지 초기화 함수
+  const resetChallenge = async () => {
+    try {
+      await AsyncStorage.removeItem('challengeData');
+      navigation.navigate('Challenge');
+    } catch (error) {
+      console.error('챌린지 초기화 오류:', error);
     }
   };
 
@@ -78,12 +137,6 @@ export default function ChallengeStartScreen({ route, navigation }) {
 
             <View
               style={[styles.circleContainer, isLeft ? styles.rowLeft : styles.rowRight]}
-              onLayout={(event) => {
-                if (isCurrentDay) {
-                  const layout = event.nativeEvent.layout;
-                  setOwlLayoutY(layout.y);
-                }
-              }}
             >
               <View style={styles.circle}>
                 {isCompleted ? (
@@ -101,7 +154,8 @@ export default function ChallengeStartScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        {/* ⭐️ Home으로 이동하도록 수정 */}
+        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <Image source={{ uri: 'https://i.ibb.co/Dg5C8MzW/Arrow.png' }} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setInfoModalVisible(true)}>
@@ -130,11 +184,12 @@ export default function ChallengeStartScreen({ route, navigation }) {
                 <><Text style={styles.blueText}>{totalDays}</Text>일 챌린지 중이에요</>
               )}
             </Text>
+            {/* ⭐️ 챌린지 초기화 후 설정 화면으로 이동 */}
             <TouchableOpacity
               style={styles.resetButton}
               onPress={() => {
                 setInfoModalVisible(false);
-                navigation.navigate('Home');
+                resetChallenge();
               }}
             >
               <Text style={styles.resetButtonText}>챌린지 다시 설정하기</Text>
@@ -164,7 +219,12 @@ export default function ChallengeStartScreen({ route, navigation }) {
             <View style={styles.completionButtonRow}>
               <TouchableOpacity
                 style={[styles.completionButton, styles.completionButtonNo]}
-                onPress={() => setCompletionModalVisible(false)}
+                onPress={async () => {
+                  setCompletionModalVisible(false);
+                  // ⭐️ 챌린지 완료 후 데이터 삭제하고 Home으로 이동
+                  await AsyncStorage.removeItem('challengeData');
+                  navigation.navigate('Home');
+                }}
               >
                 <Text style={styles.completionButtonTextNo}>아니오</Text>
               </TouchableOpacity>
@@ -172,7 +232,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
                 style={[styles.completionButton, styles.completionButtonYes]}
                 onPress={() => {
                   setCompletionModalVisible(false);
-                  navigation.navigate('Home');
+                  resetChallenge();
                 }}
               >
                 <Text style={styles.completionButtonTextYes}>예</Text>
