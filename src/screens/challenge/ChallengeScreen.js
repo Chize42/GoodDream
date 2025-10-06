@@ -10,6 +10,7 @@ import {
   Image,
   FlatList,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- 챌린지 옵션 상수 ---
 const CHALLENGE_OPTIONS = [
@@ -33,19 +34,41 @@ export default function ChallengeScreen({ navigation }) {
     ...Array(spacerCount).fill({ label: "" }),
   ];
 
+  // ⭐️ 챌린지 시작 여부 확인 - 화면 진입 시 체크
+  useEffect(() => {
+    checkChallengeStatus();
+  }, []);
+
+  const checkChallengeStatus = async () => {
+    try {
+      const challengeData = await AsyncStorage.getItem('challengeData');
+      if (challengeData) {
+        const { totalDays, startDate } = JSON.parse(challengeData);
+        // 챌린지가 이미 시작되었으면 ChallengeStart 화면으로 이동
+        navigation.replace('ChallengeStart', { totalDays, startDate });
+      }
+    } catch (error) {
+      console.error('챌린지 상태 확인 오류:', error);
+    }
+  };
+
   useEffect(() => {
     flatListRef.current?.scrollToIndex({
-      index: selectedIndex,
+      index: selectedIndex + spacerCount, 
       animated: false,
     });
-  }, []);
+  }, [selectedIndex, spacerCount]);
 
   const renderItem = ({ item }) => {
     const { label } = item;
     if (!label) return <View style={styles.itemContainer} />;
 
     const numberMatch = label.match(/\d+/);
-    if (!numberMatch) return <Text style={styles.pickerItemText}>{label}</Text>;
+    if (!numberMatch) return (
+        <View style={styles.itemContainer}>
+            <Text style={styles.pickerItemText}>{label}</Text>
+        </View>
+    );
 
     const number = numberMatch[0];
     const parts = label.split(number);
@@ -62,11 +85,37 @@ export default function ChallengeScreen({ navigation }) {
 
   const handleMomentumScrollEnd = (event) => {
     const y = event.nativeEvent.contentOffset.y;
-    const index = Math.round(y / ITEM_HEIGHT);
-    const actualIndex = index - spacerCount;
+    let index = Math.round(y / ITEM_HEIGHT); 
+    let actualIndex = index - spacerCount;
 
-    if (actualIndex >= 0 && actualIndex < CHALLENGE_OPTIONS.length) {
-      setSelectedIndex(actualIndex);
+    if (actualIndex < 0) {
+        actualIndex = 0;
+        index = actualIndex + spacerCount;
+    } else if (actualIndex >= CHALLENGE_OPTIONS.length) {
+        actualIndex = CHALLENGE_OPTIONS.length - 1;
+        index = actualIndex + spacerCount;
+    }
+
+    flatListRef.current?.scrollToIndex({
+        index: index, 
+        animated: true,
+    });
+
+    setSelectedIndex(actualIndex);
+  };
+
+  // ⭐️ 챌린지 시작 버튼 - 데이터 저장
+  const handleStartChallenge = async () => {
+    try {
+      const selectedDays = CHALLENGE_OPTIONS[selectedIndex].days;
+      const challengeData = {
+        totalDays: selectedDays,
+        startDate: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem('challengeData', JSON.stringify(challengeData));
+      navigation.navigate("ChallengeStart", challengeData);
+    } catch (error) {
+      console.error('챌린지 저장 오류:', error);
     }
   };
 
@@ -100,7 +149,6 @@ export default function ChallengeScreen({ navigation }) {
                 paddingTop: spacerCount * ITEM_HEIGHT,
                 paddingBottom: spacerCount * ITEM_HEIGHT,
               }}
-              initialScrollIndex={selectedIndex}
               getItemLayout={(_, index) => ({
                 length: ITEM_HEIGHT,
                 offset: ITEM_HEIGHT * index,
@@ -116,10 +164,7 @@ export default function ChallengeScreen({ navigation }) {
 
         <TouchableOpacity
           style={styles.startButton}
-          onPress={() => {
-            const selectedDays = CHALLENGE_OPTIONS[selectedIndex].days;
-            navigation.navigate("ChallengeStart", { totalDays: selectedDays });
-          }}
+          onPress={handleStartChallenge}
         >
           <Text style={styles.startButtonText}>시작</Text>
         </TouchableOpacity>
@@ -216,9 +261,9 @@ const styles = StyleSheet.create({
   pickerItemText: {
     color: "white",
     fontSize: 22,
-    paddingTop: 5,
     fontWeight: "bold",
     textAlign: "center",
+    lineHeight: ITEM_HEIGHT, 
   },
   challengeText: {
     color: "#fff",
