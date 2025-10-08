@@ -1,39 +1,56 @@
-import React from "react";
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 
-const inProgressList = [
-  {
-    date: "2025-05-16",
-    title: "홍길동님이 보낸 문의",
-    desc: "문의하기 남은 제목을 남긴 공간",
-    status: "진행중",
-  },
-  {
-    date: "2025-05-16",
-    title: "홍길동님이 보낸 문의",
-    desc: "문의하기 남은 제목을 남긴 공간",
-    status: "진행중",
-  },
-  {
-    date: "2025-05-16",
-    title: "홍길동님이 보낸 문의",
-    desc: "문의하기 남은 제목을 남긴 공간",
-    status: "진행중",
-  },
-  {
-    date: "2025-05-16",
-    title: "홍길동님이 보낸 문의",
-    desc: "문의하기 남은 제목을 남긴 공간",
-    status: "진행중",
-  },
-];
+// API_BASE_URL을 import 합니다.
+import API_BASE_URL from '../../config'; // 경로는 프로젝트 구조에 맞게 수정하세요.
 
 export default function InquiryHistoryScreen({ navigation }) {
+    const [inquiries, setInquiries] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // useEffect를 사용하여 실제 API 호출
+    useEffect(() => {
+        const fetchInquiries = async () => {
+            setLoading(true);
+            
+            try {
+                // 실제 API GET 요청: '답변 대기' 상태의 문의 목록을 요청합니다.
+                // 백엔드 server.js의 상태(status)와 일치해야 합니다.
+                const response = await fetch(`${API_BASE_URL}?status=답변 대기`);
+
+                if (!response.ok) {
+                    throw new Error('문의 목록 조회 실패: ' + response.status);
+                }
+
+                const data = await response.json();
+                
+                // MongoDB에서 넘어온 실제 데이터를 상태에 저장
+                setInquiries(data); 
+                
+            } catch (error) {
+                console.error("문의 목록 조회 실패:", error);
+                // 오류 발생 시 빈 목록을 보여주고 사용자에게 메시지 표시 가능
+                setInquiries([]); 
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInquiries();
+    }, []); // 빈 배열을 넣어 컴포넌트 마운트 시 한 번만 실행되도록 설정
+
+  // 뱃지 스타일을 상태에 따라 동적으로 결정하는 함수
+  const getBadgeStyle = (status) => {
+    return status === '답변 대기' 
+        ? styles.badgeInProgress 
+        : styles.badgeCompleted; // 다른 상태가 넘어올 경우 대비 (예: 답변 완료)
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.navigate("고객센터")}>
           <Icon name="chevron-back" size={26} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>문의내역</Text>
@@ -41,21 +58,37 @@ export default function InquiryHistoryScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.sectionTitle}>진행 중 문의</Text>
-        {inProgressList.map((item, idx) => (
-          <View key={idx} style={styles.itemBox}>
-            <Text style={styles.date}>{item.date}</Text>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.desc}>{item.desc}</Text>
-            <View style={styles.badgeBox}>
-              <Text style={styles.badgeInProgress}>진행중</Text>
-            </View>
-          </View>
-        ))}
+        
+        {loading ? ( 
+            <ActivityIndicator size="large" color="#207cff" style={{ marginTop: 30 }} />
+        ) : inquiries.length > 0 ? ( 
+            inquiries.map((item) => (
+                <TouchableOpacity 
+                    // MongoDB의 _id를 key로 사용
+                    key={item._id} 
+                    style={styles.itemBox}
+                    activeOpacity={0.8}
+                    // 문의 데이터 전체를 상세 화면으로 전달
+                    onPress={() => navigation.navigate("InquiryDetailScreen", { inquiryData: item })}
+                >
+                    {/* MongoDB 필드명(createdAt, content)에 맞게 수정 */}
+                    <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                    <Text style={styles.title}>{item.title}</Text>
+                    <Text style={styles.desc}>{item.content}</Text>
+                    <View style={styles.badgeBox}>
+                        <Text style={getBadgeStyle(item.status)}>{item.status}</Text>
+                    </View>
+                </TouchableOpacity>
+            ))
+        ) : ( 
+            <Text style={styles.noDataText}>진행 중인 문의가 없습니다.</Text>
+        )}
 
         <TouchableOpacity
           style={styles.endBtn}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate("완료된 문의")}
+          // CompletedInquiryScreen으로 이동
+          onPress={() => navigation.navigate("CompletedInquiryScreen")} 
         >
           <Text style={styles.endBtnText}>완료된 문의 보기</Text>
         </TouchableOpacity>
@@ -127,6 +160,21 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     fontWeight: "600",
     fontSize: 13,
+  },
+  badgeCompleted: { // 완료된 문의 뱃지 스타일 (다른 파일에서 사용될 수 있음)
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    backgroundColor: "#38c172", 
+    color: "#fff",
+    borderRadius: 13,
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  noDataText: {
+    color: '#92a8c6',
+    textAlign: 'center',
+    marginTop: 30,
+    fontSize: 15,
   },
   endBtn: {
     backgroundColor: "#1769fa",

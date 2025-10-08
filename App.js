@@ -31,6 +31,12 @@ import ServiceInquiryScreen from "./src/screens/settings/ServiceInquiryScreen";
 import InquiryHistoryScreen from "./src/screens/settings/InquiryHistoryScreen";
 import AdvertisementInquiryScreen from "./src/screens/settings/AdvertisementInquiryScreen";
 import CompletedInquiryScreen from "./src/screens/settings/CompletedInquiryScreen";
+import InquiryDetailScreen from "./src/screens/settings/InquiryDetailScreen";
+
+//관리자 모드 화면들 추가
+import AdminInquiryDashboard from './src/screens/admin/AdminInquiryDashboard'; 
+import AdminInquiryDetailScreen from './src/screens/admin/AdminInquiryDetailScreen';
+import AdminLoginScreen from './src/screens/admin/AdminLoginScreen';
 
 // ScheduleAlarm 관련 화면들 추가
 import SleepScheduleScreen from "./src/screens/schedule/SleepScheduleScreen";
@@ -46,6 +52,7 @@ import BubbleScreen from "./src/screens/bubble/BubbleScreen";
 //Start Sleeping 관련 화면들 추가
 import Dismiss from "./src/screens/startsleeping/Dismiss";
 import Play from "./src/screens/startsleeping/Play";
+
 
 const Stack = createStackNavigator();
 
@@ -87,11 +94,12 @@ export default function App() {
             component={ServiceInquiryScreen}
           />
           <Stack.Screen name="문의 내역" component={InquiryHistoryScreen} />
-          <Stack.Screen name="완료된 문의" component={CompletedInquiryScreen} />
+          <Stack.Screen name="CompletedInquiryScreen" component={CompletedInquiryScreen} />
           <Stack.Screen
             name="광고 문의"
             component={AdvertisementInquiryScreen}
-          />
+            />
+          <Stack.Screen name="InquiryDetailScreen" component={InquiryDetailScreen} />
           {/* ScheduleAlarm 관련 화면들 */}
           <Stack.Screen name="SleepSchedule" component={SleepScheduleScreen} />
           <Stack.Screen
@@ -109,6 +117,11 @@ export default function App() {
           {/*Start Sleeping 관련 화면들*/}
           <Stack.Screen name="Dismiss" component={Dismiss} />
           <Stack.Screen name="Play" component={Play} />
+            
+          {/*admin 관련 화면들 */}
+          <Stack.Screen name="AdminDashboard" component={AdminInquiryDashboard} />
+            <Stack.Screen name="AdminInquiryDetailScreen" component={AdminInquiryDetailScreen} />
+            <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
       </PlaylistProvider>
