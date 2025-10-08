@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, FlatList, SafeAreaView } from 'react-native';
-import { Audio } from 'expo-av'; // ⬅️ Audio 라이브러리 임포트
+import { Audio } from 'expo-av'; 
 
-// 사운드 파일 목록 (assets/sounds/ 경로를 사용합니다.)
+// 사운드 파일 목록 
 const musicData = [
   { id: '1', title: 'Desert Wind', category: 'Ambient', file: require('../../../assets/sounds/desert-wind.mp3') },
   { id: '2', title: 'Firewood Crackle', category: 'Relax', file: require('../../../assets/sounds/firewood.mp3') },
@@ -20,7 +20,7 @@ const Play = ({ navigation }) => {
   const [isMusicModalVisible, setMusicModalVisible] = useState(false); // 음악 목록 모달 상태
   const [selectedMusicId, setSelectedMusicId] = useState(musicData[0].id);
   
-  // 🎧 오디오 관련 상태 추가
+  // 오디오 관련 상태 추가
   const [sound, setSound] = useState(null); // 현재 재생 중인 Sound 객체
   const [timer, setTimer] = useState(null); // 타이머 ID 저장
 
@@ -54,7 +54,7 @@ const Play = ({ navigation }) => {
       }
       
       if (sound) {
-          // 🚨 핵심 수정: 현재 isPlaying 상태를 확인하여 오디오를 제어합니다.
+          // 현재 isPlaying 상태를 확인하여 오디오를 제어.
           if (isPlaying) {
               // 현재 재생 중이면 -> 일시정지 (UI: Pause -> Play)
               await sound.pauseAsync();
@@ -123,7 +123,7 @@ const Play = ({ navigation }) => {
           <Text style={styles.musicCategory}>· {currentMusic.category}</Text>
         </TouchableOpacity>
 
-        {/* 4. 재생/일시정지 버튼 - ✅ 이미지 URL 순서 수정! */}
+        {/* 4. 재생/일시정지 버튼  */}
         <TouchableOpacity onPress={handlePlayPause}>
           <Image
             source={{ uri: isPlaying ? 'https://i.ibb.co/bMd74SLW/play.png' : 'https://i.ibb.co/pjt4MSNy/pause.png' }}
