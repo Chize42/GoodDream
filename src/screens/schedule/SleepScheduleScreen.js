@@ -1,3 +1,5 @@
+// src/screens/schedule/SleepScheduleScreen.js
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -12,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
+import { useAuth } from "../../contexts/AuthContext"; // ✅ 추가
 import {
   getSleepSchedules,
   deleteSleepSchedules,
@@ -28,38 +31,57 @@ import {
 import { formatDaysString } from "../../utils/dayUtils";
 
 const SleepScheduleScreen = ({ navigation, route }) => {
+  const { user } = useAuth(); // ✅ AuthContext에서 user 가져오기
+
   const [isMainSleepEnabled, setIsMainSleepEnabled] = useState(true);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
   const [sleepSchedules, setSleepSchedules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 임시 사용자 ID (실제 앱에서는 인증 시스템에서 가져와야 함)
-  const userId = "user123";
+  // ❌ 제거: const userId = "user123";
 
   // 컴포넌트 마운트 시 데이터 로드 및 알림 설정
   useEffect(() => {
-    loadSchedules();
-    initializeNotifications();
-  }, []);
+    if (user?.uid) {
+      loadSchedules();
+      initializeNotifications();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user]); // ✅ user 의존성 추가
 
   // 새로운 스케줄이나 편집된 스케줄이 있을 때 처리
   useEffect(() => {
-    if (route.params?.newSchedule) {
-      handleNewSchedule(route.params.newSchedule);
-      navigation.setParams({ newSchedule: null });
-    }
-    if (route.params?.editedSchedule) {
-      handleEditedSchedule(route.params.editedSchedule);
-      navigation.setParams({ editedSchedule: null });
-    }
+    const handleParams = async () => {
+      if (route.params?.newSchedule) {
+        const newSchedule = route.params.newSchedule;
+        navigation.setParams({ newSchedule: null }); // ✅ 먼저 초기화
+        await handleNewSchedule(newSchedule);
+      }
+
+      if (route.params?.editedSchedule) {
+        const editedSchedule = route.params.editedSchedule;
+        navigation.setParams({ editedSchedule: null }); // ✅ 먼저 초기화
+        await handleEditedSchedule(editedSchedule);
+      }
+    };
+
+    handleParams();
   }, [route.params]);
 
   const loadSchedules = async () => {
     try {
+      if (!user?.uid) {
+        console.log("❌ 사용자 정보 없음");
+        return;
+      }
+
       setIsLoading(true);
-      const schedules = await getSleepSchedules(userId);
+      console.log("📖 스케줄 로드 시작:", user.uid);
+      const schedules = await getSleepSchedules(user.uid); // ✅ user.uid 사용
       setSleepSchedules(schedules);
+      console.log("✅ 스케줄 로드 완료:", schedules.length);
     } catch (error) {
       Alert.alert("오류", "스케줄을 불러오는데 실패했습니다.");
       console.error("스케줄 로드 실패:", error);
@@ -70,7 +92,6 @@ const SleepScheduleScreen = ({ navigation, route }) => {
 
   const initializeNotifications = async () => {
     try {
-      // 현재 권한 상태 먼저 확인
       const { status } = await Notifications.getPermissionsAsync();
       console.log("현재 알림 권한 상태:", status);
 
@@ -87,8 +108,25 @@ const SleepScheduleScreen = ({ navigation, route }) => {
 
   const handleNewSchedule = async (newSchedule) => {
     try {
-      const savedSchedule = await saveSleepSchedule(newSchedule, userId);
-      setSleepSchedules((prev) => [savedSchedule, ...prev]);
+      if (!user?.uid) {
+        Alert.alert("오류", "로그인이 필요합니다");
+        return;
+      }
+
+      console.log("📝 새 스케줄 저장 시작");
+      console.log("👤 userId:", user.uid);
+      console.log("📋 scheduleData:", newSchedule);
+
+      const savedSchedule = await saveSleepSchedule(user.uid, newSchedule);
+
+      console.log("✅ 저장된 스케줄:", savedSchedule);
+
+      // ✅ 중복 제거 후 추가
+      setSleepSchedules((prev) => {
+        const filtered = prev.filter((s) => s.id !== savedSchedule.id);
+        return [savedSchedule, ...filtered];
+      });
+
       Alert.alert("성공", "스케줄이 저장되고 알림이 설정되었습니다!");
     } catch (error) {
       Alert.alert("오류", "스케줄 저장에 실패했습니다.");
@@ -98,10 +136,15 @@ const SleepScheduleScreen = ({ navigation, route }) => {
 
   const handleEditedSchedule = async (editedSchedule) => {
     try {
+      if (!user?.uid) {
+        Alert.alert("오류", "로그인이 필요합니다");
+        return;
+      }
+
       const updatedSchedule = await updateSleepSchedule(
+        user.uid, // ✅ user.uid 사용
         editedSchedule.id,
-        editedSchedule,
-        userId
+        editedSchedule
       );
       setSleepSchedules((prev) =>
         prev.map((schedule) =>
@@ -130,9 +173,14 @@ const SleepScheduleScreen = ({ navigation, route }) => {
 
   const deleteSelectedItems = async () => {
     try {
+      if (!user?.uid) {
+        Alert.alert("오류", "로그인이 필요합니다");
+        return;
+      }
+
       setIsLoading(true);
 
-      await deleteSleepSchedules(selectedItems, userId);
+      await deleteSleepSchedules(user.uid, selectedItems); // ✅ user.uid 사용
       setSleepSchedules(
         sleepSchedules.filter(
           (schedule) => !selectedItems.includes(schedule.id)
@@ -156,10 +204,19 @@ const SleepScheduleScreen = ({ navigation, route }) => {
       setIsLoading(false);
     }
   };
+
   const handleToggleScheduleEnabled = async (id) => {
     if (!isDeleteMode) {
       try {
-        const updatedSchedule = await toggleScheduleEnabledService(id, userId);
+        if (!user?.uid) {
+          Alert.alert("오류", "로그인이 필요합니다");
+          return;
+        }
+
+        const updatedSchedule = await toggleScheduleEnabledService(
+          user.uid,
+          id
+        ); // ✅ user.uid 사용
         setSleepSchedules(
           sleepSchedules.map((schedule) =>
             schedule.id === id ? updatedSchedule : schedule
@@ -174,23 +231,22 @@ const SleepScheduleScreen = ({ navigation, route }) => {
       }
     }
   };
+
   const handleMainSleepEnabledChange = async (value) => {
     try {
       setIsMainSleepEnabled(value);
 
       if (value) {
-        // 메인 토글 켜기: 모든 스케줄 알림 재설정
-        await setupNotifications(userId);
+        await requestNotificationPermissions();
         Alert.alert("알림 활성화", "수면 스케줄 알림이 활성화되었습니다.");
       } else {
-        // 메인 토글 끄기: 모든 알림 취소
         await cancelAllScheduleNotifications();
         Alert.alert("알림 비활성화", "모든 수면 알림이 비활성화되었습니다.");
       }
     } catch (error) {
       console.error("메인 토글 처리 실패:", error);
       Alert.alert("오류", "알림 설정 변경에 실패했습니다.");
-      setIsMainSleepEnabled(!value); // 원래 상태로 되돌리기
+      setIsMainSleepEnabled(!value);
     }
   };
 
@@ -224,7 +280,6 @@ const SleepScheduleScreen = ({ navigation, route }) => {
     });
   };
 
-  // 테스트 함수들
   const handleTestNotification = async () => {
     try {
       await sendTestNotification();
@@ -248,6 +303,24 @@ const SleepScheduleScreen = ({ navigation, route }) => {
       console.error("알림 확인 오류:", error);
     }
   };
+
+  // ✅ 로그인 안 된 경우 처리
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View
+          style={[
+            styles.content,
+            { justifyContent: "center", alignItems: "center" },
+          ]}
+        >
+          <Text style={{ color: "#9ca3af", fontSize: 16 }}>
+            로그인이 필요합니다
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -340,7 +413,6 @@ const SleepScheduleScreen = ({ navigation, route }) => {
                 </Text>
               </View>
             ) : (
-              /* 스케줄 아이템들 */
               sleepSchedules.map((schedule) => (
                 <TouchableOpacity
                   key={schedule.id}
@@ -485,6 +557,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
   );
 };
 
+// styles는 동일
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -654,5 +727,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-
 export default SleepScheduleScreen;

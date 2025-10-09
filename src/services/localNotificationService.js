@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
-// 알림 처리 방식 설정 (deprecated 수정)
+// 알림 처리 방식 설정
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -11,7 +11,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// 알림 권한 요청만
+// 알림 권한 요청
 export const requestNotificationPermissions = async () => {
   try {
     const { status } = await Notifications.requestPermissionsAsync();
@@ -19,7 +19,6 @@ export const requestNotificationPermissions = async () => {
       throw new Error("알림 권한이 필요합니다.");
     }
 
-    // Android 알림 채널 설정
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("sleep-schedule", {
         name: "Sleep Schedule",
@@ -38,7 +37,6 @@ export const requestNotificationPermissions = async () => {
 };
 
 // 스케줄에 따른 로컬 알림 등록
-// localNotificationService.js의 scheduleLocalNotifications 함수 수정
 export const scheduleLocalNotifications = async (schedule) => {
   try {
     console.log("=== 알림 등록 시작 ===");
@@ -47,7 +45,6 @@ export const scheduleLocalNotifications = async (schedule) => {
     console.log("잠자리:", schedule.bedtime);
     console.log("기상:", schedule.wakeup);
 
-    // 기존 알림 취소
     await cancelScheduleNotifications(schedule.id);
 
     if (!schedule.enabled || !schedule.notifications) {
@@ -67,44 +64,39 @@ export const scheduleLocalNotifications = async (schedule) => {
 
     const notificationIds = [];
 
+    // 다음 발생 시간 계산 함수
+    const getNextOccurrence = (weekday, hour, minute) => {
+      const now = new Date();
+      const targetDate = new Date();
+
+      const currentWeekday = now.getDay();
+      const targetWeekday = weekday === 1 ? 0 : weekday - 1;
+
+      let daysUntil = targetWeekday - currentWeekday;
+      if (
+        daysUntil < 0 ||
+        (daysUntil === 0 &&
+          (now.getHours() > hour ||
+            (now.getHours() === hour && now.getMinutes() >= minute)))
+      ) {
+        daysUntil += 7;
+      }
+
+      targetDate.setDate(targetDate.getDate() + daysUntil);
+      targetDate.setHours(hour, minute, 0, 0);
+
+      return targetDate;
+    };
+
     for (const day of schedule.days) {
       const weekday = dayMapping[day];
       console.log(`${day}요일 처리 중... weekday=${weekday}`);
 
-      if (!weekday) {
-        console.log(`${day}요일을 찾을 수 없음`);
-        continue;
-      }
-
-      // 다음 발생 시간 계산 함수
-      const getNextOccurrence = (weekday, hour, minute) => {
-        const now = new Date();
-        const targetDate = new Date();
-
-        const currentWeekday = now.getDay(); // 0=일, 1=월, 2=화...
-        const targetWeekday = weekday === 1 ? 0 : weekday - 1; // expo형식을 js형식으로 변환
-
-        let daysUntil = targetWeekday - currentWeekday;
-        if (
-          daysUntil < 0 ||
-          (daysUntil === 0 &&
-            (now.getHours() > hour ||
-              (now.getHours() === hour && now.getMinutes() >= minute)))
-        ) {
-          daysUntil += 7; // 다음 주로
-        }
-
-        targetDate.setDate(targetDate.getDate() + daysUntil);
-        targetDate.setHours(hour, minute, 0, 0);
-
-        return targetDate;
-      };
+      if (!weekday) continue;
 
       // 잠자리 알림
       if (schedule.notifications.bedtime?.enabled) {
         const [bedHours, bedMinutes] = schedule.bedtime.split(":").map(Number);
-        console.log(`잠자리 알림 등록: ${day}요일 ${bedHours}:${bedMinutes}`);
-
         const nextBedtime = getNextOccurrence(weekday, bedHours, bedMinutes);
         console.log(`다음 잠자리 알림 시간: ${nextBedtime}`);
 
@@ -134,8 +126,6 @@ export const scheduleLocalNotifications = async (schedule) => {
       // 기상 알림
       if (schedule.notifications.wakeup?.enabled) {
         const [wakeHours, wakeMinutes] = schedule.wakeup.split(":").map(Number);
-        console.log(`기상 알림 등록: ${day}요일 ${wakeHours}:${wakeMinutes}`);
-
         const nextWakeup = getNextOccurrence(weekday, wakeHours, wakeMinutes);
         console.log(`다음 기상 알림 시간: ${nextWakeup}`);
 
@@ -166,7 +156,7 @@ export const scheduleLocalNotifications = async (schedule) => {
     console.log(`총 ${notificationIds.length}개 알림 등록 완료`);
     return notificationIds;
   } catch (error) {
-    console.error("알림 등록 전체 실패:", error);
+    console.error("로컬 알림 등록 실패:", error);
     throw error;
   }
 };
@@ -176,7 +166,6 @@ export const cancelScheduleNotifications = async (scheduleId) => {
   try {
     const scheduledNotifications =
       await Notifications.getAllScheduledNotificationsAsync();
-
     const notificationsToCancel = scheduledNotifications.filter(
       (notification) => notification.content?.data?.scheduleId === scheduleId
     );
@@ -195,7 +184,7 @@ export const cancelScheduleNotifications = async (scheduleId) => {
   }
 };
 
-// 모든 스케줄 알림 취소 (메인 토글 OFF 시)
+// 모든 스케줄 알림 취소
 export const cancelAllScheduleNotifications = async () => {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
@@ -225,7 +214,7 @@ export const sendTestNotification = async () => {
         data: { type: "test" },
       },
       trigger: {
-        seconds: 10,
+        seconds: 2,
       },
     });
 

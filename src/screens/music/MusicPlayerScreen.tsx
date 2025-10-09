@@ -170,7 +170,11 @@ export default function MusicPlayerScreen({ navigation, route }: { navigation: a
                     </TouchableOpacity>
                     {playlists.map((playlist) => (
                       <TouchableOpacity key={playlist.id} style={styles.popupItem} onPress={() => handleAddToPlaylist(playlist.id)}>
-                        <View style={styles.popupItemPlaceholder} />
+                        {playlist.tracks.length > 0 ? (
+                          <Image source={playlist.tracks[0].image} style={styles.popupItemThumbnail} />
+                        ) : (
+                          <View style={styles.popupItemPlaceholder} />
+                        )}
                         <Text style={styles.popupItemText}>{playlist.title}</Text>
                       </TouchableOpacity>
                     ))}
@@ -338,6 +342,12 @@ const styles = StyleSheet.create({
       height: 40, 
       borderRadius: 8, 
       backgroundColor: '#3a3a3c', 
+      marginRight: 15 
+    },
+    popupItemThumbnail: { 
+      width: 40, 
+      height: 40, 
+      borderRadius: 8, 
       marginRight: 15 
     },
     popupItemText: { 

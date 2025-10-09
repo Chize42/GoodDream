@@ -247,46 +247,32 @@ export const checkInitialData = async () => {
   }
 };
 // Firebase에 더미 데이터 초기화
-export const initializeDummyData = async () => {
+// ✅ 사용자별 초기화
+export const initializeDummyData = async (userId) => {
   try {
-    console.log("🚀 Firebase 더미 데이터 초기화 시작...");
+    if (!userId) throw new Error("로그인이 필요합니다");
 
-    // 이미 초기화되었는지 확인
-    const isInitialized = await checkInitialData();
-    if (isInitialized) {
-      console.log("✅ 더미 데이터가 이미 초기화되어 있습니다.");
+    console.log(`🚀 ${userId} 더미 데이터 초기화 시작`);
+
+    const metadataRef = doc(db, "users", userId, "metadata", "initialized");
+    const docSnap = await getDoc(metadataRef);
+
+    if (docSnap.exists() && docSnap.data().version >= "1.2") {
+      console.log("✅ 최신 데이터 존재");
       return false;
     }
 
-    // 더미 데이터 생성
     let dummyData = generateDummyData();
     dummyData = addSpecialPatterns(dummyData);
 
     console.log(`📝 생성된 더미 데이터: ${Object.keys(dummyData).length}개`);
 
-    // 데이터 구조 샘플과 통계 출력
-    const sampleData = Object.values(dummyData)[50]; // 중간 데이터 하나 선택
-    console.log("📊 데이터 구조 샘플:", sampleData);
-
-    // 깸 시간 통계
-    const awakeStats = Object.values(dummyData).map((d) => d.awake);
-    const avgAwake = awakeStats.reduce((a, b) => a + b, 0) / awakeStats.length;
-    const maxAwake = Math.max(...awakeStats);
-    const minAwake = Math.min(...awakeStats);
-
-    console.log(
-      `📈 깸 시간 통계: 평균 ${avgAwake.toFixed(
-        1
-      )}시간, 최대 ${maxAwake}시간, 최소 ${minAwake}시간`
-    );
-
-    // Firebase에 업로드
     const uploadPromises = Object.entries(dummyData).map(([date, data]) => {
-      const docRef = doc(db, "sleepData", TEST_USER_ID, "dailyData", date);
+      const docRef = doc(db, "users", userId, "sleepData", date);
       return setDoc(docRef, {
         ...data,
         date,
-        userId: TEST_USER_ID,
+        userId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -294,24 +280,16 @@ export const initializeDummyData = async () => {
 
     await Promise.all(uploadPromises);
 
-    // 초기화 완료 마크
-    const metadataRef = doc(
-      db,
-      "sleepData",
-      TEST_USER_ID,
-      "metadata",
-      "initialized"
-    );
     await setDoc(metadataRef, {
       initializedAt: serverTimestamp(),
       dataCount: Object.keys(dummyData).length,
-      version: "1.1", // 버전 업데이트 (awake 필드 추가)
+      version: "1.2",
     });
 
-    console.log("🎉 Firebase 더미 데이터 초기화 완료!");
+    console.log("🎉 더미 데이터 초기화 완료");
     return true;
   } catch (error) {
-    console.error("❌ 더미 데이터 초기화 오류:", error);
+    console.error("❌ 초기화 오류:", error);
     throw error;
   }
 };

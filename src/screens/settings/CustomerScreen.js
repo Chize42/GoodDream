@@ -13,7 +13,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { Ionicons } from "@expo/vector-icons";
 
 const FAQ_DATA = [
-    {
+  {
     question: "수면 기록은 어떻게 작동하나요?",
     answer:
       "사용자가 수면모드를 시작하고 종료하면 자동으로 수면 시간이 기록돼요.\n또는 직접 취침 시간과 기상 시간을 입력할 수도 있어요.",
@@ -79,8 +79,9 @@ export default function CustomerScreen({ navigation }) {
               onPress={() => handleFaqPress(idx)}
             >
               <Image
-                source={{ uri: "https://i.ibb.co/LzVnRFHn/wpf-ask-question.png" }}
+                source={{ uri: "https://i.ibb.co/LzVnRFH/wpf-ask-question.png" }}
                 style={styles.faqIcon}
+                resizeMode="contain"
               />
               <Text style={styles.faqQuestion}>{item.question}</Text>
             </TouchableOpacity>
@@ -97,8 +98,9 @@ export default function CustomerScreen({ navigation }) {
           >
             <Text style={styles.menuText}>서비스 이용 문의</Text>
             <Image
-              source={{ uri: "https://i.ibb.co/60229hwt/Arrow.png" }}
+              source={{ uri: "https://i.ibb.co/60229hw/Arrow.png" }}
               style={styles.menuArrowIcon}
+              resizeMode="contain"
             />
           </TouchableOpacity>
           
@@ -109,8 +111,9 @@ export default function CustomerScreen({ navigation }) {
           >
             <Text style={styles.menuText}>문의 내역</Text>
             <Image
-              source={{ uri: "https://i.ibb.co/60229hwt/Arrow.png" }}
+              source={{ uri: "https://i.ibb.co/60229hw/Arrow.png" }}
               style={styles.menuArrowIcon}
+              resizeMode="contain"
             />
           </TouchableOpacity>
 
@@ -121,9 +124,21 @@ export default function CustomerScreen({ navigation }) {
           >
             <Text style={styles.menuText}>광고 문의</Text>
             <Image
-              source={{ uri: "https://i.ibb.co/60229hwt/Arrow.png" }}
+              source={{ uri: "https://i.ibb.co/60229hw/Arrow.png" }}
               style={styles.menuArrowIcon}
+              resizeMode="contain"
             />
+          </TouchableOpacity>
+        </View>
+        
+        {/* 관리자 모드 버튼: ScrollView의 맨 아래에 배치 */}
+        <View> 
+          <TouchableOpacity
+            style={styles.adminButtonBottom} 
+            onPress={() => navigation.navigate("AdminLogin")} 
+            activeOpacity={0.8}
+          >
+            <Text style={styles.adminButtonText}>⚠️ 관리자 모드 (테스트용)</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -231,7 +246,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "#0008",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   modalSheet: {
@@ -264,5 +279,19 @@ const styles = StyleSheet.create({
     color: "#333",
     fontSize: 15,
     lineHeight: 21,
+  },
+  adminButtonBottom: {
+    backgroundColor: "#e74c3c", 
+    borderRadius: 10,
+    paddingVertical: 15,
+    alignItems: "center",
+    marginHorizontal: 18, 
+    marginTop: 40,        
+    marginBottom: 20,     
+  },
+  adminButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

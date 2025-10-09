@@ -48,7 +48,13 @@ const MusicLikeScreen = ({ navigation }: { navigation: any }) => {
         }
       }}
     >
-      <View style={styles.thumbnail} />
+      {/* 썸네일 동기화: 첫 번째 트랙 이미지 표시 */}
+      {item.tracks.length > 0 ? (
+        <Image source={item.tracks[0].image} style={styles.thumbnail} />
+      ) : (
+        <View style={styles.thumbnail} />
+      )}
+      
       <View style={styles.playlistInfo}>
         <Text style={styles.playlistTitle}>{item.title}</Text>
         <Text style={styles.playlistTrack}>{`트랙 ${item.tracks.length}개`}</Text>

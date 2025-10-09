@@ -22,10 +22,12 @@ import {
 } from "react-native";
 import WeekChart from "../../components/WeekChart";
 import { Ionicons } from '@expo/vector-icons'; 
+import { useAuth } from "../../contexts/AuthContext";
 
 const { width } = Dimensions.get("window");
 
 function HomeScreen({ navigation }: { navigation: any }) {
+  const { user } = useAuth(); // ✅ AuthContext에서 user 가져오기
   const [username, setUsername] = useState("사용자"); // 기본값
   const [loading, setLoading] = useState(true);
   const [weekData, setWeekData] = useState([]);
@@ -54,84 +56,76 @@ function HomeScreen({ navigation }: { navigation: any }) {
   };
 
   // Firebase에서 수면 데이터 가져오기
-  const fetchWeekSleepData = async (userId: string) => {
+  const fetchWeekSleepData = async () => {
     try {
-      const weekDates = getThisWeekDates();
-      const updatedWeekData = [];
-
-      for (const dayInfo of weekDates) {
-        try {
-          // 해당 날짜의 수면 데이터 조회
-          const sleepQuery = query(
-            collection(db, "sleepRecords"),
-            where("userId", "==", userId),
-            where("date", "==", dayInfo.date)
-          );
-
-          const querySnapshot = await getDocs(sleepQuery);
-
-          if (!querySnapshot.empty) {
-            const sleepData = querySnapshot.docs[0].data();
-            updatedWeekData.push({
-              ...dayInfo,
-              data: {
-                score: sleepData.sleepScore || 0, // 수면 점수
-                duration: sleepData.sleepDuration || 0, // 수면 시간
-              },
-            });
-          } else {
-            // 데이터가 없는 경우
-            updatedWeekData.push({
-              ...dayInfo,
-              data: null,
-            });
-          }
-        } catch (error) {
-          console.error(`${dayInfo.date} 데이터 조회 오류:`, error);
-          updatedWeekData.push({
-            ...dayInfo,
-            data: null,
-          });
-        }
+      // ✅ user 존재 확인
+      if (!user?.uid) {
+        console.log("❌ 사용자 정보가 없습니다");
+        setWeekData(getThisWeekDates());
+        return;
       }
 
+      const weekDates = getThisWeekDates();
+      const startDate = weekDates[0].date;
+      const endDate = weekDates[6].date;
+
+      console.log(
+        `📖 주간 데이터 조회: ${user.uid} - ${startDate} ~ ${endDate}`
+      );
+
+      // ✅ getSleepDataRange에 userId 전달
+      const { getSleepDataRange } = await import("../../services/sleepService");
+      const sleepDataMap = await getSleepDataRange(
+        user.uid,
+        startDate,
+        endDate
+      );
+
+      const updatedWeekData = weekDates.map((dayInfo) => ({
+        ...dayInfo,
+        data: sleepDataMap[dayInfo.date] || null,
+      }));
+
       setWeekData(updatedWeekData);
+      console.log(
+        `✅ 주간 데이터 로드 완료: ${Object.keys(sleepDataMap).length}개`
+      );
     } catch (error) {
       console.error("주간 수면 데이터 조회 오류:", error);
-      // 오류 발생 시 빈 데이터로 설정
       setWeekData(getThisWeekDates());
     }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // Firestore에서 사용자 정보 가져오기
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUsername(userData.username || "사용자");
-          }
-
-          // 주간 수면 데이터 가져오기
-          await fetchWeekSleepData(user.uid);
-        } catch (error) {
-          console.error("사용자 정보를 가져오는 중 오류:", error);
-          setUsername("사용자");
-          // 오류 발생 시에도 빈 차트 표시
-          setWeekData(getThisWeekDates());
+    const loadUserData = async () => {
+      try {
+        // ✅ user 존재 확인
+        if (!user?.uid) {
+          console.log("❌ 로그인 상태가 아닙니다");
+          setLoading(false);
+          return;
         }
-      } else {
-        // 로그인되지 않은 경우 빈 데이터
-        setWeekData(getThisWeekDates());
-      }
-      setLoading(false);
-    });
 
-    // 컴포넌트 언마운트 시 리스너 정리
-    return () => unsubscribe();
-  }, [navigation]);
+        // Firestore에서 사용자 정보 가져오기
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUsername(userData.username || "사용자");
+        }
+
+        // 주간 수면 데이터 가져오기
+        await fetchWeekSleepData();
+      } catch (error) {
+        console.error("사용자 정보를 가져오는 중 오류:", error);
+        setUsername("사용자");
+        setWeekData(getThisWeekDates());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [user]); // ✅ user 의존성 추가
 
   // 현재 날짜 포맷팅
   const getCurrentDate = () => {
@@ -422,7 +416,7 @@ const styles = StyleSheet.create({
     height: 77,
     position: "absolute",
     top: 16,
-    right: 16, 
+    right: 16,
   },
   // 🔽 사운드 이미지를 위한 새로운 스타일 (버블과 동일한 크기)
   soundIllustration: {
