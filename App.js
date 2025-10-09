@@ -29,6 +29,7 @@ import SettingsScreen from "./src/screens/settings/SettingsScreen";
 import AccountScreen from "./src/screens/settings/AccountScreen";
 import EditAccountScreen from "./src/screens/settings/EditAccountScreen";
 import LinkScreen from "./src/screens/settings/LinkScreen";
+import NotificationScreen from "./src/screens/settings/NotificationScreen";
 import CustomerScreen from "./src/screens/settings/CustomerScreen";
 import ServiceInquiryScreen from "./src/screens/settings/ServiceInquiryScreen";
 import InquiryHistoryScreen from "./src/screens/settings/InquiryHistoryScreen";

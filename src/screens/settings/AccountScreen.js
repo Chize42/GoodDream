@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 
 export default function AccountScreen({ navigation, route }) {
@@ -45,10 +46,7 @@ export default function AccountScreen({ navigation, route }) {
         <View style={styles.header}>
           {/* 이 부분을 수정했습니다. */}
           <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
-            <Image
-              source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-              style={styles.headerIcon}
-            />
+            <Ionicons name="chevron-back" size={26} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>개인 정보</Text>
         </View>

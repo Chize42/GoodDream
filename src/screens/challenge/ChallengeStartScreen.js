@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { Ionicons } from "@expo/vector-icons";
+
 export default function ChallengeStartScreen({ route, navigation }) {
   const { totalDays } = route.params || {};
 
@@ -154,12 +156,14 @@ export default function ChallengeStartScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         {/* ⭐️ Home으로 이동하도록 수정 */}
         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <Image source={{ uri: 'https://i.ibb.co/Dg5C8MzW/Arrow.png' }} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setInfoModalVisible(true)}>
-          <Image source={{ uri: 'https://i.ibb.co/JwCPKLj6/mage-information-circle-fill.png' }} style={styles.icon} />
+          <Ionicons name="information-circle" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 

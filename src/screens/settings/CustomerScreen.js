@@ -10,6 +10,7 @@ import {
   Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 const FAQ_DATA = [
   {
@@ -62,9 +63,9 @@ export default function CustomerScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={26} color="#fff" />
+          <Icon name="chevron-back" size={26} color="#fff" marginTop={20} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>고객센터</Text>
+        <Text style={[styles.headerTitle, { marginTop: 20 }]}>고객센터</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>

@@ -11,6 +11,8 @@ import {
   TextInput,
 } from "react-native";
 
+import { Ionicons } from "@expo/vector-icons";
+
 const menuIcons = {
   "계정 센터":
     "https://i.ibb.co/zhpSWYS0/material-symbols-person-outline-rounded.png",
@@ -58,12 +60,8 @@ export default function SettingsScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          {/* 이 부분을 수정했습니다. */}
           <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-            <Image
-              source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-              style={styles.headerIcon}
-            />
+            <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 

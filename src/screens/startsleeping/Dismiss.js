@@ -1,20 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView } from 'react-native';
-
+import { Ionicons } from "@expo/vector-icons";
 
 const Dismiss  = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {/* 뒤로가기 버튼 */}
-        <TouchableOpacity 
-      style={styles.backButton}
-      onPress={() => navigation.navigate("Home")}
-    >
-      <Image
-        source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-        style={styles.icon}
-      />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate("Home")}
+        >
+          <Ionicons name="chevron-back" size={24} color="#fff" marginTop={30} />
     </TouchableOpacity>
 
         <View style={styles.content}>

@@ -13,6 +13,7 @@ import {
   ScrollView,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 // API_BASE_URL을 import 합니다.
 import API_BASE_URL from '../../config';
@@ -98,9 +99,9 @@ export default function ServiceInquiryScreen({ navigation }) {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={26} color="#fff" />
+            <Icon name="chevron-back" size={26} color="#fff" marginTop={10} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>문의하기</Text>
+          <Text style={[styles.headerTitle, { marginTop: 10 }]}>문의하기</Text>
         </View>
 
         <ScrollView style={styles.body}> 

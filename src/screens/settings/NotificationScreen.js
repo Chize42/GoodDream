@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Switch } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { Ionicons } from "@expo/vector-icons";
 const STORAGE_KEY = '@notification_settings'; 
 
 export default function NotificationScreen({ navigation }) {
@@ -144,7 +144,9 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
+    marginTop: 20,
+    marginBottom: 20,
+    marginLeft: 20,
   },
   headerTitle: {
     color: "#fff",
@@ -157,6 +159,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 18,
     marginBottom: 18,
+    margin: 20,
   },
   sectionRow: {
     flexDirection: "row",
@@ -170,6 +173,7 @@ const styles = StyleSheet.create({
   },
   group: {
     marginBottom: 18,
+     margin: 20,
   },
   groupLabel: {
     color: "#fff",

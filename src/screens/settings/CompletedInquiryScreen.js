@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 // API_BASE_URL을 import 합니다.
 import API_BASE_URL from '../../config'; // 경로는 프로젝트 구조에 맞게 수정하세요.
@@ -50,9 +51,9 @@ export default function CompletedInquiryScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={26} color="#fff" />
+          <Icon name="chevron-back" size={26} color="#fff" marginTop={10} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>문의내역</Text>
+        <Text style={[styles.headerTitle, { marginTop: 10 }]}>문의내역</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>

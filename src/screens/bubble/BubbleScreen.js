@@ -13,6 +13,8 @@ import {
   Dimensions,
 } from "react-native";
 
+import { Ionicons } from "@expo/vector-icons";
+
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const BUBBLE_IMAGE_URL = "https://i.ibb.co/hRYrBKy1/Group-941.png";
@@ -120,13 +122,8 @@ export default function BubbleScreen({ navigation }) {
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => navigation.navigate("Home")}
-          style={styles.backButton}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
-          <Image
-            source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-            style={styles.icon}
-          />
+          <Ionicons name="chevron-back" size={24} color="#fff" marginTop={30} />
         </TouchableOpacity>
       </View>
       {bubbles.map((bubble) => (
