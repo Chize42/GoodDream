@@ -49,7 +49,7 @@ import Play from "./src/screens/startsleeping/Play";
 
 const Stack = createStackNavigator();
 
-// 🔥 인증되지 않은 사용자용 네비게이션
+// 인증되지 않은 사용자용 네비게이션
 function AuthStack() {
   return (
     <Stack.Navigator
@@ -66,7 +66,7 @@ function AuthStack() {
   );
 }
 
-// 🔥 인증된 사용자용 네비게이션 (메인 앱)
+// 인증된 사용자용 네비게이션 (메인 앱)
 function MainStack() {
   return (
     <Stack.Navigator

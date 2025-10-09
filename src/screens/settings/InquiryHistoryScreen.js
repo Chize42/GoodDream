@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Ionicons } from "@expo/vector-icons";
 
 // API_BASE_URL을 import 합니다.
 import API_BASE_URL from '../../config'; // 경로는 프로젝트 구조에 맞게 수정하세요.
@@ -16,9 +15,8 @@ export default function InquiryHistoryScreen({ navigation }) {
             setLoading(true);
             
             try {
-                // 실제 API GET 요청: '답변 대기' 상태의 문의 목록을 요청합니다.
-                // 백엔드 server.js의 상태(status)와 일치해야 합니다.
-                const response = await fetch(`${API_BASE_URL}?status=답변 대기`);
+                // ✨ 수정: 쿼리 파라미터 없이 전체 목록을 요청하여 '답변 완료' 상태만 제외하고 필터링합니다.
+                const response = await fetch(API_BASE_URL); 
 
                 if (!response.ok) {
                     throw new Error('문의 목록 조회 실패: ' + response.status);
@@ -26,8 +24,10 @@ export default function InquiryHistoryScreen({ navigation }) {
 
                 const data = await response.json();
                 
-                // MongoDB에서 넘어온 실제 데이터를 상태에 저장
-                setInquiries(data); 
+                // ✨ '답변 완료' 상태만 제외하고 필터링합니다. ('답변 대기'와 '처리 중' 포함)
+                const inProgressList = data.filter(item => item.status !== '답변 완료');
+
+                setInquiries(inProgressList); 
                 
             } catch (error) {
                 console.error("문의 목록 조회 실패:", error);
@@ -39,22 +39,27 @@ export default function InquiryHistoryScreen({ navigation }) {
         };
 
         fetchInquiries();
-    }, []); // 빈 배열을 넣어 컴포넌트 마운트 시 한 번만 실행되도록 설정
+    }, []); 
 
   // 뱃지 스타일을 상태에 따라 동적으로 결정하는 함수
   const getBadgeStyle = (status) => {
-    return status === '답변 대기' 
-        ? styles.badgeInProgress 
-        : styles.badgeCompleted; // 다른 상태가 넘어올 경우 대비 (예: 답변 완료)
+    switch (status) {
+        case "처리 중": return styles.badgeProcessing; // 처리 중
+        case "답변 대기": return styles.badgeInProgress; // 답변 대기
+        default: return styles.badgeCompleted; // 기본값 (완료)
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={26} color="#fff" marginTop={10} />
+        <TouchableOpacity 
+            // ✨ 수정: goBack() 대신 '고객센터' 화면으로 명시적으로 이동합니다.
+            onPress={() => navigation.navigate("고객센터")}
+        >
+          <Icon name="chevron-back" size={26} color="#fff" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { marginTop: 10 }]}>문의내역</Text>
+        <Text style={styles.headerTitle}>문의내역</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
@@ -72,7 +77,7 @@ export default function InquiryHistoryScreen({ navigation }) {
                     // 문의 데이터 전체를 상세 화면으로 전달
                     onPress={() => navigation.navigate("InquiryDetailScreen", { inquiryData: item })}
                 >
-                    {/* MongoDB 필드명(createdAt, content)에 맞게 수정 */}
+                    {/* DB 필드명에 맞게 item.createdAt 등을 사용하도록 수정 */}
                     <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                     <Text style={styles.title}>{item.title}</Text>
                     <Text style={styles.desc}>{item.content}</Text>
@@ -153,19 +158,28 @@ const styles = StyleSheet.create({
     position: "absolute", 
     top: 14, right: 15 
   },
-  badgeInProgress: {
+  badgeInProgress: { // 답변 대기
     paddingHorizontal: 14,
     paddingVertical: 5,
-    backgroundColor: "#1769fa",
+    backgroundColor: "#4074D8",
     color: "#fff",
     borderRadius: 13,
     fontWeight: "600",
     fontSize: 13,
   },
-  badgeCompleted: { // 완료된 문의 뱃지 스타일 (다른 파일에서 사용될 수 있음)
+  badgeProcessing: { // 처리 중
     paddingHorizontal: 14,
     paddingVertical: 5,
-    backgroundColor: "#38c172", 
+    backgroundColor: "#fff",
+    color: "#4074D8",
+    borderRadius: 13,
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  badgeCompleted: { // 완료된 문의
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    backgroundColor: "#4074D8", 
     color: "#fff",
     borderRadius: 13,
     fontWeight: "600",

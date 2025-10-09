@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   badgeCompleted: {
     paddingHorizontal: 14,
     paddingVertical: 5,
-    backgroundColor: "#38c172", // 완료는 초록색
+    backgroundColor: "#4074D8",
     color: "#fff",
     borderRadius: 13,
     fontWeight: "600",

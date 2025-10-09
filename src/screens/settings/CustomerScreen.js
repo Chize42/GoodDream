@@ -62,7 +62,7 @@ export default function CustomerScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
           <Icon name="chevron-back" size={26} color="#fff" marginTop={20} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { marginTop: 20 }]}>고객센터</Text>

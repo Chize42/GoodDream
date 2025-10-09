@@ -7,52 +7,115 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+
+// API_BASE_URL을 import 합니다.
+import API_BASE_URL from '../../config'; 
 
 export default function AdminInquiryDetailScreen({ navigation, route }) {
   // AdminInquiryDashboard에서 전달받은 문의 데이터
   const { inquiryData } = route.params || {}; 
   
-  const [answerContent, setAnswerContent] = useState('');
+  // 초기 상태 로드 (답변 내용과 현재 상태)
+  const [answerContent, setAnswerContent] = useState(inquiryData?.answerContent || '');
   const [currentStatus, setCurrentStatus] = useState(inquiryData?.status || '답변 대기');
+  const [loading, setLoading] = useState(false); 
 
-  const handleStatusChange = (newStatus) => {
-    // 실제로는 서버 API를 호출하여 상태를 업데이트합니다.
-    setCurrentStatus(newStatus);
-    // 임시 알림
-    alert(`문의 상태가 "${newStatus}"로 변경되었습니다.`); 
+  // ✨ 1. '답변 완료' 외의 상태 변경을 처리하는 함수
+  const handleStatusChange = async (newStatus) => {
+    // '답변 완료' 상태는 반드시 handleSubmitAnswer를 통해 처리하도록 분리
+    if (newStatus === '답변 완료') {
+        return Alert.alert("안내", "답변 완료 처리는 '답변 제출 및 완료 처리' 버튼을 사용해 주세요.");
+    }
+    
+    setLoading(true); // 로딩 시작
+
+    // 서버로 보낼 데이터: 현재 답변 내용(기존 내용)과 새로운 상태
+    const submissionData = {
+        answerContent: answerContent, 
+        newStatus: newStatus,
+    };
+    
+    const inquiryId = inquiryData?._id; 
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/${inquiryId}`, { 
+            method: 'PATCH', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(submissionData),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("상태 업데이트 API Error:", errorText);
+            throw new Error(`상태 업데이트 서버 오류: ${response.status}`);
+        }
+
+        // 성공 응답 처리
+        Alert.alert("성공", `문의 상태가 '${newStatus}'로 변경되었습니다.`);
+        setCurrentStatus(newStatus); 
+        
+        // 대시보드로 돌아가 목록을 갱신 (새로고침 유도)
+        navigation.goBack(); 
+
+    } catch (error) {
+        console.error("상태 업데이트 실패:", error);
+        Alert.alert("실패", "상태 업데이트에 실패했습니다. 서버 연결을 확인하세요.");
+    } finally {
+        setLoading(false); // 로딩 종료
+    }
   };
 
-  // ✨ 답변 제출 기능 강화
-  const handleSubmitAnswer = () => {
+
+  // ✨ 2. '답변 제출 및 완료 처리' (답변 내용 필수) 함수
+  const handleSubmitAnswer = async () => {
+    // '답변 완료'는 답변 내용이 필수이므로 유효성 검사
     if (!answerContent.trim()) {
-        alert("답변 내용을 입력해주세요.");
+        Alert.alert("경고", "답변 내용을 입력해주세요.");
         return;
     }
     
-    // ✨ ✨ 이 부분이 답변 제출 API 호출 로직이 들어갈 곳입니다. ✨ ✨
-    
-    // 서버로 보낼 데이터: inquiryData.id, answerContent, newStatus
+    setLoading(true); // 로딩 시작
+
+    // 서버로 보낼 데이터: 답변 내용과 최종 상태는 '답변 완료'
     const submissionData = {
-        inquiryId: inquiryData.id,
-        answer: answerContent,
-        newStatus: "답변 완료",
+        answerContent: answerContent,
+        newStatus: '답변 완료',
     };
     
-    // console.log("서버로 전송될 답변 데이터:", submissionData);
-    // fetch('YOUR_API_ENDPOINT/answer', { method: 'POST', body: JSON.stringify(submissionData) })
+    const inquiryId = inquiryData?._id; 
     
-    // 시뮬레이션: 1초 후 서버 응답이 왔다고 가정
-    setTimeout(() => {
-        // 서버 성공 시 처리
-        alert(`답변이 성공적으로 제출되었습니다. 상태: 답변 완료`);
-        setCurrentStatus('답변 완료');
-        setAnswerContent(''); // 입력 필드 비우기
+    try {
+        const response = await fetch(`${API_BASE_URL}/${inquiryId}`, { 
+            method: 'PATCH', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(submissionData),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("답변 제출 API Error:", errorText);
+            throw new Error(`답변 제출 서버 오류: ${response.status}`);
+        }
+
+        // 성공 응답 처리
+        Alert.alert("성공", "답변이 제출되었으며, 문의 상태가 '답변 완료'로 변경되었습니다.");
         
-        // 제출 후 대시보드로 돌아가 목록을 갱신하도록 유도 (goBack)
+        // UI 상태 업데이트
+        setCurrentStatus('답변 완료'); 
+        
+        // 대시보드로 돌아가 목록을 갱신
         navigation.goBack(); 
-    }, 1000);
+
+    } catch (error) {
+        console.error("답변 제출 실패:", error);
+        Alert.alert("실패", "답변 제출에 실패했습니다. 서버 연결을 확인하세요.");
+    } finally {
+        setLoading(false); // 로딩 종료
+    }
   };
   
   const getStatusStyle = (status) => {
@@ -78,15 +141,15 @@ export default function AdminInquiryDetailScreen({ navigation, route }) {
         {/* === 1. 문의 기본 정보 === */}
         <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>접수 번호:</Text>
-            <Text style={styles.infoText}>{inquiryData?.id || 'N/A'}</Text>
+            <Text style={styles.infoText}>{inquiryData?._id?.slice(-8) || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>문의자:</Text>
-            <Text style={styles.infoText}>{inquiryData?.name || 'N/A'}</Text>
+            <Text style={styles.infoText}>{inquiryData?.userName || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>접수일:</Text>
-            <Text style={styles.infoText}>{inquiryData?.date || 'N/A'}</Text>
+            <Text style={styles.infoText}>{new Date(inquiryData?.createdAt).toLocaleDateString() || 'N/A'}</Text>
         </View>
         <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>현재 상태:</Text>
@@ -99,9 +162,8 @@ export default function AdminInquiryDetailScreen({ navigation, route }) {
         <View style={styles.card}>
             <Text style={styles.cardHeader}>제목: {inquiryData?.title || '제목 없음'}</Text>
             <Text style={styles.content}>
-                {inquiryData?.desc || "상세 내용을 불러올 수 없습니다."}
+                {inquiryData?.content || "상세 내용을 불러올 수 없습니다."}
             </Text>
-            <Text style={styles.fileLink}>첨부 파일 보기 (구현 예정)</Text>
         </View>
 
         {/* === 3. 문의 상태 변경 (관리자 액션) === */}
@@ -114,7 +176,9 @@ export default function AdminInquiryDetailScreen({ navigation, route }) {
                         styles.statusBtn,
                         currentStatus === status && styles.statusBtnActive
                     ]}
+                    // ✨ handleStatusChange를 호출하여 상태 업데이트 (답변 완료는 제외)
                     onPress={() => handleStatusChange(status)}
+                    disabled={loading}
                 >
                     <Text style={[
                         styles.statusBtnText, 
@@ -134,14 +198,20 @@ export default function AdminInquiryDetailScreen({ navigation, route }) {
             placeholderTextColor="#888"
             value={answerContent}
             onChangeText={setAnswerContent}
+            editable={!loading}
         />
         
         <TouchableOpacity
-            style={styles.submitBtn}
+            style={[styles.submitBtn, loading && styles.disabledBtn]}
             activeOpacity={0.7}
             onPress={handleSubmitAnswer}
+            disabled={loading}
         >
-            <Text style={styles.submitBtnText}>답변 제출 및 완료 처리</Text>
+            {loading ? (
+                <ActivityIndicator color="#fff" />
+            ) : (
+                <Text style={styles.submitBtnText}>답변 제출 및 완료 처리</Text>
+            )}
         </TouchableOpacity>
 
       </ScrollView>
@@ -264,4 +334,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         letterSpacing: 0.3,
     },
+    disabledBtn: {
+        opacity: 0.6,
+    }
 });
