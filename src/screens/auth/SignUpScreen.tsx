@@ -1,9 +1,7 @@
-// src/screens/SignUpScreen.tsx
+// src/screens/auth/SignUpScreen.tsx
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../../services/firebase"; // 파이어베이스 설정 파일 경로를 확인해주세요.
+import { useAuth } from "../../contexts/AuthContext";
 import {
   Dimensions,
   Image,
@@ -17,14 +15,28 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 
 const googleImage = require("../../../assets/google.png");
 
 const { width, height } = Dimensions.get("window");
 
+interface FormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  age: string;
+  phoneNumber: string;
+}
+
 function SignUpScreen({ navigation }: { navigation: any }) {
-  const [formData, setFormData] = useState({
+  const { signUp } = useAuth(); // ✅ AuthContext에서 가져오기
+  const [loading, setLoading] = useState(false); // ✅ 로딩 상태 추가
+
+  const [formData, setFormData] = useState<FormData>({
     username: "",
     email: "",
     password: "",
@@ -70,45 +82,51 @@ function SignUpScreen({ navigation }: { navigation: any }) {
 
   const passwordValidation = validatePassword(formData.password);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
+  // ✅ 회원가입 처리 함수 (Firebase 연동)
   const handleGetStarted = async () => {
-  if (privacyChecked && passwordValidation.isValid && passwordsMatch) {
-    try {
-      // 1. 파이어베이스 인증(Authentication)에 계정 생성
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const user = userCredential.user;
+    if (!isFormValid) return;
 
-      // 2. Firestore에 추가 사용자 정보 저장
-      await setDoc(doc(db, "users", user.uid), {
+    setLoading(true);
+
+    try {
+      // ✅ AuthContext의 signUp 사용 (더미 데이터 자동 생성 포함)
+      await signUp(formData.email, formData.password, {
         username: formData.username,
-        email: formData.email,
         age: formData.age,
         gender: selectedGender,
         phoneNumber: formData.phoneNumber,
-        createdAt: new Date(),
       });
 
-      console.log("계정 생성 성공! 사용자 UID:", user.uid);
-      alert("회원가입이 완료되었습니다!"); // 사용자에게 성공 메시지 표시
-      navigation.navigate("Home"); // 성공 후 홈 화면으로 이동
+      Alert.alert(
+        "회원가입 완료!",
+        "3개월치 수면 데이터가 자동으로 생성되었습니다.",
+        [{ text: "확인" }]
+      );
 
+      // ✅ AuthContext가 자동으로 MainStack으로 전환
     } catch (error: any) {
-      // 에러 처리
-      console.error("회원가입 중 오류 발생:", error.message);
-      alert(`회원가입 실패: ${error.message}`);
+      let errorMessage = "회원가입에 실패했습니다";
+
+      if (error.code === "auth/email-already-in-use") {
+        errorMessage = "이미 사용 중인 이메일입니다";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "올바른 이메일 형식이 아닙니다";
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "비밀번호가 너무 약합니다 (최소 6자 이상)";
+      }
+
+      Alert.alert("회원가입 실패", errorMessage);
+    } finally {
+      setLoading(false);
     }
-  }
-};
+  };
 
   const isFormValid =
     privacyChecked &&
@@ -122,7 +140,7 @@ function SignUpScreen({ navigation }: { navigation: any }) {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()} // React Navigation 방식으로 변경
+          onPress={() => navigation.goBack()}
           accessibilityLabel="뒤로 가기"
         >
           <Ionicons name="chevron-back" size={24} color="white" />
@@ -515,23 +533,28 @@ function SignUpScreen({ navigation }: { navigation: any }) {
               </Text>
             </TouchableOpacity>
 
+            {/* ✅ 로딩 상태 추가된 버튼 */}
             <TouchableOpacity
               style={[
                 styles.submitBtn,
-                !isFormValid && styles.submitBtnDisabled,
+                (!isFormValid || loading) && styles.submitBtnDisabled,
               ]}
-              activeOpacity={isFormValid ? 0.8 : 1}
+              activeOpacity={isFormValid && !loading ? 0.8 : 1}
               onPress={handleGetStarted}
-              disabled={!isFormValid}
+              disabled={!isFormValid || loading}
             >
-              <Text
-                style={[
-                  styles.submitBtnText,
-                  !isFormValid && styles.submitBtnTextDisabled,
-                ]}
-              >
-                GET STARTED
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text
+                  style={[
+                    styles.submitBtnText,
+                    !isFormValid && styles.submitBtnTextDisabled,
+                  ]}
+                >
+                  GET STARTED
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -546,18 +569,39 @@ function SignUpScreen({ navigation }: { navigation: any }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Privacy Policy Modal - 스타일은 기존과 동일하므로 생략 */}
+      {/* Privacy Policy Modal */}
+      <Modal
+        visible={privacyModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setPrivacyModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Privacy Policy</Text>
+            <ScrollView style={styles.modalScroll}>
+              <Text style={styles.modalText}>
+                여기에 개인정보 처리방침 내용이 들어갑니다...
+              </Text>
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setPrivacyModalVisible(false)}
+            >
+              <Text style={styles.modalCloseBtnText}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
-// 스타일은 기존과 동일하므로 생략 (너무 길어서)
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#181820",
   },
-  // ... (기존 스타일들 모두 동일)
   keyboardAvoidingView: {
     flex: 1,
   },
@@ -599,7 +643,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignSelf: "center",
     paddingHorizontal: 20,
-    paddingTop: height < 700 ? 20 : 40,
+    paddingTop: height < 700 ? 80 : 100,
     paddingBottom: 40,
     justifyContent: "flex-start",
   },
@@ -688,7 +732,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 15,
     top: "50%",
-    transform: [{ translateY: -15 }],
+    transform: [{ translateY: -10 }],
     padding: 5,
   },
   passwordRequirements: {
@@ -858,6 +902,44 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   genderButtonTextSelected: {
+    color: "white",
+    fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#1a1a1a",
+    borderRadius: 20,
+    padding: 20,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 15,
+  },
+  modalScroll: {
+    maxHeight: 400,
+  },
+  modalText: {
+    color: "#ccc",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  modalCloseBtn: {
+    backgroundColor: "#4285f4",
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 15,
+    alignItems: "center",
+  },
+  modalCloseBtnText: {
     color: "white",
     fontWeight: "600",
   },
