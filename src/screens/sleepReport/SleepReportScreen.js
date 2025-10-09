@@ -1,4 +1,5 @@
-// src/screens/SleepReportScreen.js - 수정된 버전
+// src/screens/sleepReport/SleepReportScreen.js
+
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,13 +10,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../contexts/AuthContext"; // ✅ 추가
 
 // 컴포넌트 import
 import CustomCalendar from "../../components/CustomCalendar";
 import CircularProgress from "../../components/CircularProgress";
 import SleepStageChart from "../../components/SleepStageChart";
 import WeekChart from "../../components/WeekChart";
-// import FirebaseStatusBar from "../components/FirebaseStatusBar";
 import SleepHeatmapChart from "../../components/SleepHeatmapChart";
 import EditSleepTimeModal from "../../components/EditSleepTimeModal";
 
@@ -33,15 +34,17 @@ import {
   getSleepDataRange,
   uploadDummyData,
   addNewSleepData,
+  updateSleepData, // ✅ 추가
 } from "../../services/sleepService";
 
 const SleepReportScreen = ({ navigation, route }) => {
+  const { user } = useAuth(); // ✅ AuthContext에서 user 가져오기
+
   // route에서 전달받은 날짜를 초기값으로 사용
   const getInitialDate = () => {
     if (route?.params?.initialDate) {
       return route.params.initialDate;
     }
-    // 파라미터가 없으면 오늘 날짜 사용
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
       2,
@@ -51,10 +54,10 @@ const SleepReportScreen = ({ navigation, route }) => {
 
   const getInitialMonth = () => {
     const initialDate = getInitialDate();
-    return initialDate.substring(0, 7) + "-01"; // YYYY-MM-01 형식
+    return initialDate.substring(0, 7) + "-01";
   };
 
-  // State 관리 - 초기값을 오늘 날짜로 설정
+  // State 관리
   const [selectedDate, setSelectedDate] = useState(getInitialDate());
   const [currentMonth, setCurrentMonth] = useState(getInitialMonth());
   const [calendarViewMode, setCalendarViewMode] = useState("month");
@@ -69,6 +72,13 @@ const SleepReportScreen = ({ navigation, route }) => {
   // Firebase 데이터 로드
   const loadSleepData = async () => {
     try {
+      // ✅ user 확인
+      if (!user?.uid) {
+        console.log("❌ 사용자 정보 없음");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
 
       // 현재 월의 시작과 끝 계산
@@ -105,13 +115,15 @@ const SleepReportScreen = ({ navigation, route }) => {
       }
 
       console.log("확장된 데이터 로드 범위:", {
+        userId: user.uid, // ✅ 추가
         startDate,
         endDate,
         weekStartStr,
         weekEndStr,
       });
 
-      const data = await getSleepDataRange(startDate, endDate);
+      // ✅ user.uid 전달
+      const data = await getSleepDataRange(user.uid, startDate, endDate);
       setSleepData(data);
 
       console.log("로드된 데이터 키:", Object.keys(data));
@@ -119,18 +131,15 @@ const SleepReportScreen = ({ navigation, route }) => {
       console.error("데이터 로드 오류:", err);
       Alert.alert(
         "데이터 로드 실패",
-        "Firebase에서 데이터를 불러올 수 없습니다. 더미 데이터를 업로드하시겠습니까?",
-        [
-          { text: "취소", style: "cancel" },
-          { text: "업로드", onPress: handleUploadDummyData },
-        ]
+        "Firebase에서 데이터를 불러올 수 없습니다.",
+        [{ text: "확인" }]
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // 더미 데이터 업로드
+  // 더미 데이터 업로드 (더 이상 필요 없을 수 있음)
   const handleUploadDummyData = async () => {
     try {
       setLoading(true);
@@ -146,8 +155,11 @@ const SleepReportScreen = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    loadSleepData();
-  }, [currentMonth, selectedDate]);
+    if (user?.uid) {
+      loadSleepData();
+    }
+  }, [currentMonth, selectedDate, user]); // ✅ user 의존성 추가
+
   useEffect(() => {
     if (route?.params?.initialDate) {
       const newDate = route.params.initialDate;
@@ -156,31 +168,50 @@ const SleepReportScreen = ({ navigation, route }) => {
       setSelectedDate(newDate);
       setCurrentMonth(newMonth);
 
-      console.log("날짜 업데이트:", newDate, newMonth); // 디버깅용
+      console.log("날짜 업데이트:", newDate, newMonth);
     }
   }, [route?.params?.initialDate]);
-  useEffect(() => {
-    const checkAndUpdateToday = () => {
-      const today = new Date();
-      const todayString = `${today.getFullYear()}-${String(
-        today.getMonth() + 1
-      ).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-      // 현재 선택된 날짜가 오늘이 아니고, 새로운 날이 되었다면 자동 업데이트
-      if (selectedDate !== todayString) {
-        const lastUpdate = new Date(selectedDate);
-        const now = new Date();
+  // 수면 시간 저장 함수
+  const handleSaveSleepTime = async (newBedTime, newWakeTime) => {
+    try {
+      if (!user?.uid) {
+        Alert.alert("오류", "로그인이 필요합니다");
+        return;
       }
-      // 날짜가 바뀌었는지 확인 (시간은 무시)
-      if (lastUpdate.toDateString() !== now.toDateString()) {
-        setSelectedDate(todayString);
-        setCurrentMonth(todayString.substring(0, 7) + "-01");
-        console.log("자동으로 오늘 날짜로 업데이트:", todayString);
-      }
-    };
-  });
 
-  // 유틸리티 함수들
+      setLoading(true);
+
+      // ✅ Firebase에 업데이트
+      await updateSleepData(user.uid, selectedDate, {
+        bedTime: newBedTime,
+        wakeTime: newWakeTime,
+      });
+
+      // 로컬 상태 업데이트
+      setSleepData((prevData) => ({
+        ...prevData,
+        [selectedDate]: {
+          ...prevData[selectedDate],
+          bedTime: newBedTime,
+          wakeTime: newWakeTime,
+        },
+      }));
+
+      Alert.alert("성공", "수면 시간이 수정되었습니다");
+      setShowEditModal(false);
+
+      // 데이터 다시 로드
+      await loadSleepData();
+    } catch (error) {
+      console.error("수면 시간 수정 오류:", error);
+      Alert.alert("오류", "수면 시간 수정에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 유틸리티 함수들 (동일)
   const formatTime = (timeStr) => {
     const [hour, minute] = timeStr.split(":");
     const hourInt = parseInt(hour);
@@ -273,40 +304,31 @@ const SleepReportScreen = ({ navigation, route }) => {
     return `${formatDate(startDate)} - ${formatDate(endDate)}`;
   };
 
-  // 수면 시간 저장 함수 추가
-  const handleSaveSleepTime = async (newBedTime, newWakeTime) => {
-    try {
-      setLoading(true);
-
-      // Firebase에 업데이트 (sleepService에 업데이트 함수가 있다면)
-      // await updateSleepTime(selectedDate, newBedTime, newWakeTime);
-
-      // 로컬 상태 업데이트
-      setSleepData((prevData) => ({
-        ...prevData,
-        [selectedDate]: {
-          ...prevData[selectedDate],
-          bedTime: newBedTime,
-          wakeTime: newWakeTime,
-        },
-      }));
-
-      // 데이터 다시 로드 (선택사항)
-      // await loadSleepData();
-    } catch (error) {
-      console.error("수면 시간 수정 오류:", error);
-      Alert.alert("오류", "수면 시간 수정에 실패했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ✅ 로그인 안 된 경우 처리
+  if (!user) {
+    return (
+      <View style={globalStyles.container}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: colors.textMuted, fontSize: 16 }}>
+            로그인이 필요합니다
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={globalStyles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 헤더 */}
         <View style={[globalStyles.header, sleepReportStyles.header]}>
-          <TouchableOpacity onPress={() => navigation?.navigate('Home')}>
+          <TouchableOpacity onPress={() => navigation?.navigate("Home")}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={globalStyles.headerTitle}>수면 리포트</Text>
@@ -314,7 +336,7 @@ const SleepReportScreen = ({ navigation, route }) => {
             onPress={() => {
               console.log("+ 버튼 클릭됨!");
               navigation.navigate("AddSleepData", {
-                selectedDate: selectedDate, // 현재 선택된 날짜 전달
+                selectedDate: selectedDate,
               });
             }}
           >
@@ -359,7 +381,7 @@ const SleepReportScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* 데이터 표시 영역 */}
+        {/* 데이터 표시 영역 - 기존 코드 그대로 */}
         {dataViewMode === "day" ? (
           currentSleepData ? (
             <>
@@ -417,7 +439,7 @@ const SleepReportScreen = ({ navigation, route }) => {
                 </View>
               </View>
 
-              {/* 수면 단계 박스 - 데이터 확인 후 조건부 렌더링 */}
+              {/* 수면 단계 박스 */}
               <View style={sleepReportStyles.sleepStageBox}>
                 <Text style={globalStyles.sectionLabel}>수면 단계 비율</Text>
                 {currentSleepData.deep !== undefined &&
@@ -482,7 +504,7 @@ const SleepReportScreen = ({ navigation, route }) => {
                 onPress={() => {
                   console.log("수면 기록하기 버튼 클릭됨!");
                   navigation.navigate("AddSleepData", {
-                    selectedDate: selectedDate, // 선택된 날짜 전달
+                    selectedDate: selectedDate,
                   });
                 }}
               >
@@ -493,9 +515,7 @@ const SleepReportScreen = ({ navigation, route }) => {
         ) : (
           // 주간 데이터
           <>
-            {/* 주간 평균 데이터 박스 (날짜 범위 포함) */}
             <View style={sleepReportStyles.weekAverageBox}>
-              {/* 주간 날짜 범위 - 박스 내부 좌측정렬 */}
               <Text style={sleepReportStyles.weekRangeInBox}>
                 {getWeekDateRange()}
               </Text>
@@ -521,13 +541,11 @@ const SleepReportScreen = ({ navigation, route }) => {
               </View>
             </View>
 
-            {/* 주간 차트 박스 - 수면 효율 */}
             <View style={sleepReportStyles.weekChartBox}>
               <Text style={globalStyles.sectionLabel}>주간 수면 효율</Text>
               <WeekChart weekData={getWeekData()} />
             </View>
 
-            {/* 수면 패턴 일관성 히트맵 - 새로 추가 */}
             <View style={sleepReportStyles.weekChartBox}>
               <Text style={globalStyles.sectionLabel}>수면 패턴 일관성</Text>
               <SleepHeatmapChart weekData={getWeekData()} />

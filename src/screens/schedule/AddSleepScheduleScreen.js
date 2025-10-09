@@ -1,3 +1,5 @@
+// src/screens/schedule/AddSleepScheduleScreen.js
+
 import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
@@ -10,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useAuth } from "../../contexts/AuthContext"; // ✅ 추가
 import {
   getSleepSchedules,
   saveSleepSchedule,
@@ -27,16 +30,16 @@ const DAYS = [
 ];
 
 export default function AddSleepScheduleScreen({ navigation, route }) {
+  const { user } = useAuth(); // ✅ 추가
+
   const editSchedule = route.params?.editSchedule;
-  const existingSchedules = route.params?.existingSchedules || []; // 기존 스케줄들
+  const existingSchedules = route.params?.existingSchedules || [];
   const isEditing = !!editSchedule;
 
-  // 기존 스케줄들에서 사용 중인 요일들 추출
   const getUsedDays = () => {
     const usedDays = new Set();
     existingSchedules.forEach((schedule) => {
       if (schedule.id !== editSchedule?.id) {
-        // 편집 중인 스케줄은 제외
         if (schedule.days) {
           schedule.days.forEach((day) => usedDays.add(day));
         }
@@ -65,7 +68,6 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
   const [showWakeupPicker, setShowWakeupPicker] = useState(false);
 
   const toggleDay = (day) => {
-    // 이미 사용 중인 요일은 선택할 수 없음
     if (usedDays.includes(day) && !selectedDays.includes(day)) {
       Alert.alert("알림", `${day}요일은 이미 다른 스케줄에서 사용 중입니다.`);
       return;
@@ -90,7 +92,6 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
     let wakeHour = wakeupTime.getHours();
     let wakeMinute = wakeupTime.getMinutes();
 
-    // 다음날 기상하는 경우 계산
     if (
       wakeHour < bedHour ||
       (wakeHour === bedHour && wakeMinute <= bedMinute)
@@ -112,7 +113,8 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
       return;
     }
 
-    const schedule = {
+    // ✅ scheduleData 객체 생성 (올바른 구조)
+    const scheduleData = {
       id: editSchedule?.id,
       name: scheduleName,
       bedtime: formatTime(bedtime),
@@ -120,19 +122,34 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
       days: selectedDays,
     };
 
+    console.log("💾 저장할 스케줄 데이터:", scheduleData);
+
     if (isEditing) {
-      navigation.navigate("SleepSchedule", { editedSchedule: schedule });
+      navigation.navigate("SleepSchedule", { editedSchedule: scheduleData });
     } else {
-      navigation.navigate("SleepSchedule", { newSchedule: schedule });
+      navigation.navigate("SleepSchedule", { newSchedule: scheduleData });
     }
   };
+
+  // ✅ 로그인 안 된 경우 처리
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text style={{ color: "#9ca3af" }}>로그인이 필요합니다</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.navigate('SleepSchedule')}
+          onPress={() => navigation.navigate("SleepSchedule")}
         >
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
@@ -272,6 +289,7 @@ export default function AddSleepScheduleScreen({ navigation, route }) {
   );
 }
 
+// styles는 동일
 const styles = StyleSheet.create({
   container: {
     flex: 1,

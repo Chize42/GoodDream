@@ -1,3 +1,5 @@
+// src/services/sleepScheduleService.js
+
 import {
   collection,
   addDoc,
@@ -5,8 +7,6 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  query,
-  where,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import {
@@ -15,50 +15,71 @@ import {
   requestNotificationPermissions,
 } from "./localNotificationService";
 
-// Firebase 컬렉션 참조
-const getSchedulesCollection = () => collection(db, "sleepSchedules");
+// 사용자별 스케줄 경로
+const getUserSchedulesCollection = (userId) => {
+  if (!userId) throw new Error("로그인이 필요합니다");
+  return collection(db, "users", userId, "sleepSchedules");
+};
 
-/**
- * 수면 스케줄 저장 (Firebase + 로컬 알림)
- */
-export const saveSleepSchedule = async (scheduleData, userId = null) => {
+// ✅ export 키워드 확인!
+export const saveSleepSchedule = async (userId, scheduleData) => {
   try {
-    if (!userId) {
-      throw new Error("사용자 ID가 필요합니다.");
+    console.log("📝 스케줄 저장 시작 - userId:", userId);
+    console.log("📝 스케줄 데이터:", scheduleData);
+
+    if (!userId) throw new Error("사용자 ID가 필요합니다");
+    if (!scheduleData) throw new Error("스케줄 데이터가 필요합니다");
+
+    let daysArray = scheduleData.days || [];
+
+    if (typeof daysArray === "string") {
+      daysArray = [daysArray];
+    }
+
+    if (!Array.isArray(daysArray)) {
+      console.warn("⚠️ days가 배열이 아닙니다.");
+      daysArray = [];
     }
 
     const newSchedule = {
-      ...scheduleData,
+      name: scheduleData.name || "새 스케줄",
+      bedtime: scheduleData.bedtime,
+      wakeup: scheduleData.wakeup,
+      days: daysArray,
       id: scheduleData.id || Date.now().toString(),
-      userId: userId,
+      userId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       enabled: scheduleData.enabled !== false,
-
-      // 기본 알림 설정 추가 (없으면)
       notifications: scheduleData.notifications || {
         bedtime: {
           enabled: true,
           title: "💤 잠자리에 들 시간입니다",
-          body: `${scheduleData.name} - 편안한 밤 되세요!`,
+          body: `${scheduleData.name || "새 스케줄"} - 편안한 밤 되세요!`,
         },
         wakeup: {
           enabled: true,
           title: "🌅 좋은 아침입니다!",
-          body: `${scheduleData.name} - 상쾌한 하루를 시작하세요!`,
+          body: `${
+            scheduleData.name || "새 스케줄"
+          } - 상쾌한 하루를 시작하세요!`,
         },
       },
     };
 
-    // Firebase에 저장
-    const docRef = await addDoc(getSchedulesCollection(), newSchedule);
+    console.log("✅ 최종 스케줄 데이터:", newSchedule);
+
+    const docRef = await addDoc(
+      getUserSchedulesCollection(userId),
+      newSchedule
+    );
     newSchedule.firebaseId = docRef.id;
 
-    // 로컬 알림 등록
     if (newSchedule.enabled) {
       await scheduleLocalNotifications(newSchedule);
     }
 
+    console.log("✅ 스케줄 저장 완료:", newSchedule.firebaseId);
     return newSchedule;
   } catch (error) {
     console.error("수면 스케줄 저장 실패:", error);
@@ -66,28 +87,42 @@ export const saveSleepSchedule = async (scheduleData, userId = null) => {
   }
 };
 
-/**
- * 수면 스케줄 수정
- */
-export const updateSleepSchedule = async (
-  scheduleId,
-  updateData,
-  userId = null
-) => {
+// ✅ export 키워드 확인!
+export const getSleepSchedules = async (userId) => {
   try {
-    if (!userId) {
-      throw new Error("사용자 ID가 필요합니다.");
-    }
+    console.log("📖 스케줄 조회 시작 - userId:", userId);
+
+    if (!userId) throw new Error("사용자 ID가 필요합니다");
+
+    const querySnapshot = await getDocs(getUserSchedulesCollection(userId));
+    const schedules = [];
+
+    querySnapshot.forEach((doc) => {
+      schedules.push({
+        ...doc.data(),
+        firebaseId: doc.id,
+      });
+    });
+
+    console.log("✅ 스케줄 조회 완료:", schedules.length, "개");
+    return schedules.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+  } catch (error) {
+    console.error("수면 스케줄 조회 실패:", error);
+    throw error;
+  }
+};
+
+export const updateSleepSchedule = async (userId, scheduleId, updateData) => {
+  try {
+    if (!userId) throw new Error("사용자 ID가 필요합니다");
 
     const schedules = await getSleepSchedules(userId);
     const targetSchedule = schedules.find((s) => s.id === scheduleId);
 
-    if (!targetSchedule) {
-      throw new Error("수정할 스케줄을 찾을 수 없습니다.");
-    }
-
-    if (!targetSchedule.firebaseId) {
-      throw new Error("Firebase ID가 없어 수정할 수 없습니다.");
+    if (!targetSchedule || !targetSchedule.firebaseId) {
+      throw new Error("수정할 스케줄을 찾을 수 없습니다");
     }
 
     const updatedData = {
@@ -95,12 +130,16 @@ export const updateSleepSchedule = async (
       updatedAt: new Date().toISOString(),
     };
 
-    const scheduleRef = doc(db, "sleepSchedules", targetSchedule.firebaseId);
+    const scheduleRef = doc(
+      db,
+      "users",
+      userId,
+      "sleepSchedules",
+      targetSchedule.firebaseId
+    );
     await updateDoc(scheduleRef, updatedData);
 
     const updatedSchedule = { ...targetSchedule, ...updatedData };
-
-    // 로컬 알림 재설정
     await scheduleLocalNotifications(updatedSchedule);
 
     return updatedSchedule;
@@ -110,28 +149,27 @@ export const updateSleepSchedule = async (
   }
 };
 
-/**
- * 수면 스케줄 삭제
- */
-export const deleteSleepSchedule = async (scheduleId, userId = null) => {
+export const deleteSleepSchedule = async (userId, scheduleId) => {
   try {
-    if (!userId) {
-      throw new Error("사용자 ID가 필요합니다.");
-    }
+    if (!userId) throw new Error("사용자 ID가 필요합니다");
 
     const schedules = await getSleepSchedules(userId);
     const targetSchedule = schedules.find((s) => s.id === scheduleId);
 
     if (!targetSchedule) {
-      throw new Error("삭제할 스케줄을 찾을 수 없습니다.");
+      throw new Error("삭제할 스케줄을 찾을 수 없습니다");
     }
 
-    // 로컬 알림 취소
     await cancelScheduleNotifications(scheduleId);
 
-    // Firebase 삭제
     if (targetSchedule.firebaseId) {
-      const scheduleRef = doc(db, "sleepSchedules", targetSchedule.firebaseId);
+      const scheduleRef = doc(
+        db,
+        "users",
+        userId,
+        "sleepSchedules",
+        targetSchedule.firebaseId
+      );
       await deleteDoc(scheduleRef);
     }
 
@@ -142,32 +180,31 @@ export const deleteSleepSchedule = async (scheduleId, userId = null) => {
   }
 };
 
-/**
- * 여러 스케줄 한번에 삭제
- */
-export const deleteSleepSchedules = async (scheduleIds, userId = null) => {
+export const deleteSleepSchedules = async (userId, scheduleIds) => {
   try {
-    if (!userId) {
-      throw new Error("사용자 ID가 필요합니다.");
-    }
+    if (!userId) throw new Error("사용자 ID가 필요합니다");
 
     const schedules = await getSleepSchedules(userId);
     const targetSchedules = schedules.filter((s) => scheduleIds.includes(s.id));
 
     if (targetSchedules.length === 0) {
-      throw new Error("삭제할 스케줄을 찾을 수 없습니다.");
+      throw new Error("삭제할 스케줄을 찾을 수 없습니다");
     }
 
-    // 로컬 알림 취소
     for (const scheduleId of scheduleIds) {
       await cancelScheduleNotifications(scheduleId);
     }
 
-    // Firebase 삭제
     const deletePromises = targetSchedules
       .filter((schedule) => schedule.firebaseId)
       .map((schedule) => {
-        const scheduleRef = doc(db, "sleepSchedules", schedule.firebaseId);
+        const scheduleRef = doc(
+          db,
+          "users",
+          userId,
+          "sleepSchedules",
+          schedule.firebaseId
+        );
         return deleteDoc(scheduleRef);
       });
 
@@ -179,61 +216,21 @@ export const deleteSleepSchedules = async (scheduleIds, userId = null) => {
   }
 };
 
-/**
- * 수면 스케줄 조회
- */
-export const getSleepSchedules = async (userId = null) => {
+export const toggleScheduleEnabled = async (userId, scheduleId) => {
   try {
-    if (!userId) {
-      throw new Error("사용자 ID가 필요합니다.");
-    }
-
-    const q = query(getSchedulesCollection(), where("userId", "==", userId));
-
-    const querySnapshot = await getDocs(q);
-    const firebaseSchedules = [];
-
-    querySnapshot.forEach((doc) => {
-      firebaseSchedules.push({
-        ...doc.data(),
-        firebaseId: doc.id,
-      });
-    });
-
-    const sortedSchedules = firebaseSchedules.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-
-    return sortedSchedules;
-  } catch (error) {
-    console.error("수면 스케줄 조회 실패:", error);
-    throw error;
-  }
-};
-
-/**
- * 스케줄 활성화/비활성화 토글
- */
-export const toggleScheduleEnabled = async (scheduleId, userId = null) => {
-  try {
-    if (!userId) {
-      throw new Error("사용자 ID가 필요합니다.");
-    }
+    if (!userId) throw new Error("사용자 ID가 필요합니다");
 
     const schedules = await getSleepSchedules(userId);
     const schedule = schedules.find((s) => s.id === scheduleId);
 
     if (!schedule) {
-      throw new Error("스케줄을 찾을 수 없습니다.");
+      throw new Error("스케줄을 찾을 수 없습니다");
     }
 
     const newEnabledState = !schedule.enabled;
-
-    const updatedSchedule = await updateSleepSchedule(
-      scheduleId,
-      { enabled: newEnabledState },
-      userId
-    );
+    const updatedSchedule = await updateSleepSchedule(userId, scheduleId, {
+      enabled: newEnabledState,
+    });
 
     return updatedSchedule;
   } catch (error) {
@@ -242,9 +239,6 @@ export const toggleScheduleEnabled = async (scheduleId, userId = null) => {
   }
 };
 
-/**
- * 알림 권한 설정 함수 (단순화됨)
- */
 export const initializeNotificationPermissions = async () => {
   try {
     await requestNotificationPermissions();
@@ -256,11 +250,9 @@ export const initializeNotificationPermissions = async () => {
   }
 };
 
-export const getActiveSchedulesForDay = async (dayOfWeek, userId = null) => {
+export const getActiveSchedulesForDay = async (userId, dayOfWeek) => {
   try {
-    if (!userId) {
-      throw new Error("사용자 ID가 필요합니다.");
-    }
+    if (!userId) throw new Error("사용자 ID가 필요합니다");
 
     const schedules = await getSleepSchedules(userId);
     return schedules.filter(
