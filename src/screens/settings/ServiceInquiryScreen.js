@@ -45,12 +45,12 @@ export default function ServiceInquiryScreen({ navigation }) {
       return;
     }
     
-    // 서버로 보낼 데이터 객체
+    // 서버로 보낼 데이터 객체 (userName으로 수정)
     const inquiryData = {
         title, 
         content, 
         email, 
-        name,
+        userName: name,  // 백엔드 스키마에 맞춰 userName으로 전송
         status: "답변 대기", // 초기 상태 설정
     };
     
