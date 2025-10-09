@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, FlatList, SafeAreaView } from 'react-native';
-
+import { Ionicons } from "@expo/vector-icons";
 // 임시 데이터: 음악 리스트
 const musicData = [
   { id: '1', title: 'Thunderstorm', category: 'Relax' },
@@ -34,10 +34,7 @@ const Play = ({ navigation }) => {
       style={styles.backButton}
       onPress={() => navigation.navigate("Home")}
     >
-      <Image
-        source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-        style={styles.icon}
-      />
+      <Ionicons name="chevron-back" size={24} color="#fff" marginTop={30} />
     </TouchableOpacity>
 
       <View style={styles.content}>

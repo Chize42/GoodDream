@@ -12,6 +12,7 @@ import {
   Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ServiceInquiryScreen({ navigation }) {
   const [consent, setConsent] = useState(false);
@@ -38,9 +39,9 @@ export default function ServiceInquiryScreen({ navigation }) {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="chevron-back" size={26} color="#fff" />
+            <Icon name="chevron-back" size={26} color="#fff" marginTop={10} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>문의하기</Text>
+          <Text style={[styles.headerTitle, { marginTop: 10 }]}>문의하기</Text>
         </View>
 
         <View style={styles.body}>

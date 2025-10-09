@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 const inProgressList = [
   {
@@ -34,9 +35,9 @@ export default function InquiryHistoryScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={26} color="#fff" />
+          <Icon name="chevron-back" size={26} color="#fff" marginTop={10} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>문의내역</Text>
+        <Text style={[styles.headerTitle, { marginTop: 10 }]}>문의내역</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>

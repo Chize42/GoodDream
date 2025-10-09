@@ -26,6 +26,7 @@ import SettingsScreen from "./src/screens/settings/SettingsScreen";
 import AccountScreen from "./src/screens/settings/AccountScreen";
 import EditAccountScreen from "./src/screens/settings/EditAccountScreen";
 import LinkScreen from "./src/screens/settings/LinkScreen";
+import NotificationScreen from "./src/screens/settings/NotificationScreen";
 import CustomerScreen from "./src/screens/settings/CustomerScreen";
 import ServiceInquiryScreen from "./src/screens/settings/ServiceInquiryScreen";
 import InquiryHistoryScreen from "./src/screens/settings/InquiryHistoryScreen";
@@ -82,6 +83,7 @@ export default function App() {
           <Stack.Screen name="EditAccount" component={EditAccountScreen} />
           <Stack.Screen name="계정 연동" component={LinkScreen} />
           <Stack.Screen name="고객센터" component={CustomerScreen} />
+          <Stack.Screen name="알림" component={NotificationScreen} />
           <Stack.Screen
             name="서비스 이용 문의"
             component={ServiceInquiryScreen}

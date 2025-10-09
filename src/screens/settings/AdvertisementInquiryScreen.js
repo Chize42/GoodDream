@@ -1,15 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ServiceInquiryScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={26} color="#fff" />
+          <Icon name="chevron-back" size={26} color="#fff" marginTop={20} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>광고 문의</Text>
+        <Text style={[styles.headerTitle, { marginTop: 20 }]}>광고 문의</Text>
       </View>
 
       <View style={styles.content}>

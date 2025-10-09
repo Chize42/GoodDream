@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import WeekChart from "../../components/WeekChart";
+import { Ionicons } from '@expo/vector-icons'; 
 
 const { width } = Dimensions.get("window");
 
@@ -186,16 +187,19 @@ function HomeScreen({ navigation }: { navigation: any }) {
 
         <View style={styles.weekly}>
           <Text style={styles.weeklyText}>weekly report</Text>
-          <TouchableOpacity>
-            <Text
-              style={styles.seeMore}
-              onPress={() => {
+          <TouchableOpacity
+            style={styles.seeMoreButton}
+            onPress={() => {
                 const today = new Date().toISOString().split("T")[0];
                 navigation.navigate("SleepReport", { initialDate: today });
               }}
+          >
+            <Text
+              style={styles.seeMoreText}
             >
-              더보기 &gt;
+              더보기
             </Text>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
@@ -278,6 +282,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
 const styles = StyleSheet.create({
   homeScreen: {
     backgroundColor: "#181820",
+    marginTop: 50,
     flex: 1,
   },
   scrollContent: {
@@ -349,6 +354,14 @@ const styles = StyleSheet.create({
   weeklyText: {
     fontSize: 18,
     color: "white",
+  },
+  seeMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  seeMoreText: {
+    marginRight: 4,
+    color: "#aaa",
   },
   seeMore: {
     color: "#aaa",

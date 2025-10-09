@@ -302,7 +302,7 @@ const SleepReportScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={globalStyles.container}>
+    <View style={[globalStyles.container, { marginTop: 30 }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 헤더 */}
         <View style={[globalStyles.header, sleepReportStyles.header]}>

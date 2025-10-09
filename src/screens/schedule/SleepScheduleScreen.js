@@ -500,7 +500,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#3A3A3C",
   },
   backButton: {
-    padding: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   headerTitle: {
     fontSize: 18,

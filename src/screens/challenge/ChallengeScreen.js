@@ -18,6 +18,8 @@ const CHALLENGE_OPTIONS = [
   { days: 66, label: "66 일" },
 ];
 
+import { Ionicons } from "@expo/vector-icons";
+
 const ITEM_HEIGHT = 45;
 const VISIBLE_ITEMS = 3;
 
@@ -74,10 +76,7 @@ export default function ChallengeScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-          <Image
-            source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-            style={styles.icon}
-          />
+          <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>
       </View>
       <View style={styles.content}>
