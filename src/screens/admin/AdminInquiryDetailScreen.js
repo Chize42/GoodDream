@@ -9,11 +9,20 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Image,
+  Modal,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 
-// API_BASE_URL을 import 합니다.
-import API_BASE_URL from '../../config'; 
+// API_BASE_URL과 SERVER_BASE_URL을 import 합니다.
+import API_BASE_URL, { SERVER_BASE_URL } from '../../config'; 
+
+const { width } = Dimensions.get('window');
 
 export default function AdminInquiryDetailScreen({ navigation, route }) {
   // AdminInquiryDashboard에서 전달받은 문의 데이터
@@ -23,6 +32,19 @@ export default function AdminInquiryDetailScreen({ navigation, route }) {
   const [answerContent, setAnswerContent] = useState(inquiryData?.answerContent || '');
   const [currentStatus, setCurrentStatus] = useState(inquiryData?.status || '답변 대기');
   const [loading, setLoading] = useState(false); 
+  
+  // 이미지 확대 모달 상태
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  
+  // ScrollView ref
+  const scrollViewRef = React.useRef(null);
+
+  // 이미지 클릭 시 확대 보기
+  const openImageModal = (imageUri) => {
+    setSelectedImage(imageUri);
+    setImageModalVisible(true);
+  };
 
   // ✨ 1. '답변 완료' 외의 상태 변경을 처리하는 함수
   const handleStatusChange = async (newStatus) => {
@@ -127,6 +149,11 @@ export default function AdminInquiryDetailScreen({ navigation, route }) {
     }
   };
 
+  // 서버 URL에서 이미지 URL 생성
+  const getImageUrl = (path) => {
+    return `${SERVER_BASE_URL}${path}`;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -136,85 +163,168 @@ export default function AdminInquiryDetailScreen({ navigation, route }) {
         <Text style={styles.headerTitle}>문의 답변 처리</Text>
       </View>
 
-      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 40 }}>
-        
-        {/* === 1. 문의 기본 정보 === */}
-        <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>접수 번호:</Text>
-            <Text style={styles.infoText}>{inquiryData?._id?.slice(-8) || 'N/A'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>문의자:</Text>
-            <Text style={styles.infoText}>{inquiryData?.userName || 'N/A'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>접수일:</Text>
-            <Text style={styles.infoText}>{new Date(inquiryData?.createdAt).toLocaleDateString() || 'N/A'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>현재 상태:</Text>
-            <Text style={[styles.infoText, getStatusStyle(currentStatus)]}>
-                {currentStatus}
-            </Text>
-        </View>
-
-        {/* === 2. 문의 원문 (제목 및 내용) === */}
-        <View style={styles.card}>
-            <Text style={styles.cardHeader}>제목: {inquiryData?.title || '제목 없음'}</Text>
-            <Text style={styles.content}>
-                {inquiryData?.content || "상세 내용을 불러올 수 없습니다."}
-            </Text>
-        </View>
-
-        {/* === 3. 문의 상태 변경 (관리자 액션) === */}
-        <Text style={styles.label}>상태 변경</Text>
-        <View style={styles.statusButtons}>
-            {['답변 대기', '처리 중', '답변 완료'].map(status => (
-                <TouchableOpacity
-                    key={status}
-                    style={[
-                        styles.statusBtn,
-                        currentStatus === status && styles.statusBtnActive
-                    ]}
-                    // ✨ handleStatusChange를 호출하여 상태 업데이트 (답변 완료는 제외)
-                    onPress={() => handleStatusChange(status)}
-                    disabled={loading}
-                >
-                    <Text style={[
-                        styles.statusBtnText, 
-                        currentStatus === status && styles.statusBtnTextActive
-                    ]}>{status}</Text>
-                </TouchableOpacity>
-            ))}
-        </View>
-
-        {/* === 4. 답변 작성 영역 === */}
-        <Text style={styles.label}>답변 작성</Text>
-        <TextInput
-            style={styles.textarea}
-            multiline
-            numberOfLines={8}
-            placeholder="사용자에게 보낼 답변 내용을 입력하세요"
-            placeholderTextColor="#888"
-            value={answerContent}
-            onChangeText={setAnswerContent}
-            editable={!loading}
-        />
-        
-        <TouchableOpacity
-            style={[styles.submitBtn, loading && styles.disabledBtn]}
-            activeOpacity={0.7}
-            onPress={handleSubmitAnswer}
-            disabled={loading}
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.body} 
+          contentContainerStyle={{ paddingBottom: 0 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-            {loading ? (
-                <ActivityIndicator color="#fff" />
-            ) : (
-                <Text style={styles.submitBtnText}>답변 제출 및 완료 처리</Text>
-            )}
-        </TouchableOpacity>
+            
+            {/* === 1. 문의 기본 정보 === */}
+            <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>접수 번호:</Text>
+                <Text style={styles.infoText}>{inquiryData?._id?.slice(-8) || 'N/A'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>문의자:</Text>
+                <Text style={styles.infoText}>{inquiryData?.userName || 'N/A'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>이메일:</Text>
+                <Text style={styles.infoText}>{inquiryData?.email || 'N/A'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>접수일:</Text>
+                <Text style={styles.infoText}>{new Date(inquiryData?.createdAt).toLocaleDateString() || 'N/A'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>현재 상태:</Text>
+                <Text style={[styles.infoText, getStatusStyle(currentStatus)]}>
+                    {currentStatus}
+                </Text>
+            </View>
 
-      </ScrollView>
+            {/* === 2. 문의 원문 (제목 및 내용) === */}
+            <View style={styles.card}>
+                <Text style={styles.cardHeader}>제목: {inquiryData?.title || '제목 없음'}</Text>
+                <Text style={styles.content}>
+                    {inquiryData?.content || "상세 내용을 불러올 수 없습니다."}
+                </Text>
+            </View>
+
+            {/* === 첨부 파일 표시 === */}
+            {inquiryData?.attachments && inquiryData.attachments.length > 0 && (
+              <View style={styles.attachmentSection}>
+                <Text style={styles.label}>첨부 파일 ({inquiryData.attachments.length}개)</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.attachmentList}>
+                    {inquiryData.attachments.map((attachment, index) => (
+                      <TouchableOpacity 
+                        key={index}
+                        style={styles.attachmentItem}
+                        onPress={() => openImageModal(getImageUrl(attachment))}
+                        activeOpacity={0.8}
+                      >
+                        <Image 
+                          source={{ uri: getImageUrl(attachment) }}
+                          style={styles.attachmentImage}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.attachmentOverlay}>
+                          <Icon name="expand-outline" size={24} color="#fff" />
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+            )}
+
+            {/* === 3. 문의 상태 변경 (관리자 액션) === */}
+            <Text style={styles.label}>상태 변경</Text>
+            <View style={styles.statusButtons}>
+                {['답변 대기', '처리 중', '답변 완료'].map(status => (
+                    <TouchableOpacity
+                        key={status}
+                        style={[
+                            styles.statusBtn,
+                            currentStatus === status && styles.statusBtnActive
+                        ]}
+                        onPress={() => handleStatusChange(status)}
+                        disabled={loading}
+                    >
+                        <Text style={[
+                            styles.statusBtnText, 
+                            currentStatus === status && styles.statusBtnTextActive
+                        ]}>{status}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+
+            {/* === 4. 답변 작성 영역 === */}
+            <Text style={styles.label}>답변 작성</Text>
+            <TextInput
+                style={styles.textarea}
+                multiline
+                numberOfLines={8}
+                placeholder="사용자에게 보낼 답변 내용을 입력하세요"
+                placeholderTextColor="#888"
+                value={answerContent}
+                onChangeText={setAnswerContent}
+                editable={!loading}
+                textAlignVertical="top"
+                keyboardAppearance="dark"
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                }}
+            />
+            
+            <TouchableOpacity
+                style={[styles.submitBtn, loading && styles.disabledBtn]}
+                activeOpacity={0.7}
+                onPress={handleSubmitAnswer}
+                disabled={loading}
+            >
+                {loading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.submitBtnText}>답변 제출 및 완료 처리</Text>
+                )}
+            </TouchableOpacity>
+
+          </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* 이미지 확대 모달 */}
+      <Modal
+        visible={imageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity 
+            style={styles.modalCloseArea}
+            activeOpacity={1}
+            onPress={() => setImageModalVisible(false)}
+          >
+            <View style={styles.modalHeader}>
+              <TouchableOpacity 
+                onPress={() => setImageModalVisible(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Icon name="close" size={32} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalImageContainer}>
+              <Image 
+                source={{ uri: selectedImage }}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -246,13 +356,14 @@ const styles = StyleSheet.create({
     },
     infoLabel: {
         color: '#92a8c6',
-        width: 80,
+        width: 100,
         fontSize: 15,
     },
     infoText: {
         color: '#fff',
         fontSize: 15,
         fontWeight: '600',
+        flex: 1,
     },
     card: {
         backgroundColor: "#18191b",
@@ -261,7 +372,7 @@ const styles = StyleSheet.create({
         borderWidth: 1.2,
         borderColor: "#1c2c43",
         marginTop: 15,
-        marginBottom: 15,
+        marginBottom: 10,
     },
     cardHeader: {
         color: "#fff",
@@ -277,10 +388,32 @@ const styles = StyleSheet.create({
         fontSize: 15,
         lineHeight: 22,
     },
-    fileLink: {
-        color: '#207cff',
+    attachmentSection: {
         marginTop: 10,
-        fontWeight: '600',
+        marginBottom: 15,
+    },
+    attachmentList: {
+        flexDirection: 'row',
+        paddingVertical: 5,
+    },
+    attachmentItem: {
+        marginRight: 10,
+        borderRadius: 10,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    attachmentImage: {
+        width: 120,
+        height: 120,
+        backgroundColor: '#232324',
+    },
+    attachmentOverlay: {
+        position: 'absolute',
+        bottom: 5,
+        right: 5,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        borderRadius: 20,
+        padding: 5,
     },
     label: {
         color: "#fff",
@@ -336,5 +469,31 @@ const styles = StyleSheet.create({
     },
     disabledBtn: {
         opacity: 0.6,
-    }
+    },
+    // 모달 스타일
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    },
+    modalCloseArea: {
+        flex: 1,
+    },
+    modalHeader: {
+        paddingTop: 50,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        alignItems: 'flex-end',
+    },
+    modalCloseBtn: {
+        padding: 5,
+    },
+    modalImageContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalImage: {
+        width: width - 40,
+        height: '80%',
+    },
 });

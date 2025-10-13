@@ -7,7 +7,13 @@ const InquirySchema = new mongoose.Schema({
     title: { type: String, required: true },       // 제목
     content: { type: String, required: true },     // 내용
     email: { type: String, required: true },       // 연락처 (이메일)
-    name: { type: String, required: true },        // 사용자 성함
+    userName: { type: String, required: true },    // 사용자 성함 (name -> userName으로 통일)
+    
+    // 첨부 파일 정보
+    attachments: { 
+        type: [String],  // 파일 경로 배열 (예: ['/uploads/1234567890_image.jpg'])
+        default: [] 
+    },
     
     // 처리 상태 및 관리자 정보 (백엔드/관리자 모드에서 업데이트)
     status: { 
