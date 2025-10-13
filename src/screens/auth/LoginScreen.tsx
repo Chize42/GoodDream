@@ -1,7 +1,9 @@
-// src/screens/LoginScreen.tsx
+// src/screens/auth/LoginScreen.tsx
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import {
+  Alert,
   Dimensions,
   Image,
   SafeAreaView,
@@ -10,20 +12,67 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
-
 const googleImage = require("../../../assets/google.png");
 
 function LoginScreen({ navigation }: { navigation: any }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { signIn } = useAuth();
+
+  const handleLogin = async () => {
+    console.log("🟢 1. handleLogin 시작");
+    console.log("🟢 2. 입력값:", { email, password });
+
+    if (!email || !password) {
+      console.log("🔴 3. 입력값 없음");
+      Alert.alert("오류", "이메일과 비밀번호를 입력해주세요");
+      return;
+    }
+
+    console.log("🟢 4. setLoading(true)");
+    setLoading(true);
+
+    try {
+      console.log("🟢 5. signIn 호출 직전");
+      const result = await signIn(email, password);
+      console.log("🟢 6. signIn 완료:", result);
+      console.log("✅ 로그인 성공, 홈 화면으로 이동");
+    } catch (error: any) {
+      console.log("🔴 7. 에러 발생:", error);
+      console.log("🔴 에러 코드:", error.code);
+      console.log("🔴 에러 메시지:", error.message);
+
+      let errorMessage = "로그인에 실패했습니다";
+
+      if (error.code === "auth/user-not-found") {
+        errorMessage = "존재하지 않는 계정입니다";
+      } else if (error.code === "auth/wrong-password") {
+        errorMessage = "비밀번호가 일치하지 않습니다";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "올바른 이메일 형식이 아닙니다";
+      } else if (error.code === "auth/invalid-credential") {
+        errorMessage = "이메일 또는 비밀번호가 올바르지 않습니다";
+      }
+
+      Alert.alert("로그인 실패", errorMessage);
+    } finally {
+      console.log("🟢 8. finally - setLoading(false)");
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Fixed Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()} // React Navigation 방식으로 변경
+          onPress={() => navigation.goBack()}
           accessibilityLabel="뒤로 가기"
         >
           <Ionicons name="chevron-back" size={24} color="white" />
@@ -31,22 +80,18 @@ function LoginScreen({ navigation }: { navigation: any }) {
         <Text style={styles.headerTitle}>Welcome Back!</Text>
       </View>
 
-      {/* Main Content Area */}
       <View style={styles.content}>
-        {/* Social Login Buttons */}
         <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8}>
           <Image source={googleImage} style={styles.socialIcon} />
           <Text style={styles.socialBtnText}>CONTINUE WITH GOOGLE</Text>
         </TouchableOpacity>
 
-        {/* Divider Text */}
         <View style={styles.dividerContainer}>
           <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>OR LOG IN WITH EMAIL</Text>
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Login Form Inputs */}
         <TextInput
           style={styles.input}
           placeholder="Email address"
@@ -54,6 +99,8 @@ function LoginScreen({ navigation }: { navigation: any }) {
           keyboardType="email-address"
           autoCapitalize="none"
           returnKeyType="next"
+          value={email}
+          onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}
@@ -61,18 +108,27 @@ function LoginScreen({ navigation }: { navigation: any }) {
           placeholderTextColor="#666"
           secureTextEntry
           returnKeyType="done"
+          value={password}
+          onChangeText={setPassword}
+          onSubmitEditing={handleLogin}
         />
 
-        {/* Login Submit Button */}
         <TouchableOpacity
-          style={styles.submitBtn}
+          style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
           activeOpacity={0.8}
-          onPress={() => navigation.navigate("Home")} // React Navigation 방식으로 변경
+          onPress={() => {
+            console.log("🔵 버튼 클릭됨!"); // ✅ 추가
+            handleLogin();
+          }}
+          disabled={loading}
         >
-          <Text style={styles.submitBtnText}>LOG IN</Text>
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.submitBtnText}>LOG IN</Text>
+          )}
         </TouchableOpacity>
 
-        {/* Sign Up Redirect */}
         <View style={styles.signupRedirectContainer}>
           <Text style={styles.signupRedirectText}>DON'T HAVE AN ACCOUNT? </Text>
           <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
@@ -199,6 +255,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
+  },
+  submitBtnDisabled: {
+    backgroundColor: "#666",
   },
   submitBtnText: {
     color: "white",
