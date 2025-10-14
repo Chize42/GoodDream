@@ -1,5 +1,6 @@
 // App.js
 import React from "react";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
@@ -54,8 +55,7 @@ import Dismiss from "./src/screens/startsleeping/Dismiss";
 import Play from "./src/screens/startsleeping/Play";
 
 //auth context 관련 코드 임포트
-import { AuthProvider } from "./src/contexts/AuthContext";
-
+import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { CommonActions } from "@react-navigation/native";
 
 const Stack = createStackNavigator();
@@ -146,22 +146,10 @@ function RootNavigator() {
   const { user, loading } = useAuth();
   const navigationRef = React.useRef(null);
 
-  // Firebase Auth 초기화 대기 중
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4285f4" />
-      </View>
-    );
-  }
-
-  // ✅ 로그인 안 됨 → 인트로/로그인/회원가입 화면
-  // ✅ 로그인 됨 → 메인 앱 화면
-  // ✅ user 상태 변경 감지
+  // ✅ useEffect를 먼저 선언 (조건문 위로!)
   React.useEffect(() => {
     if (!loading && navigationRef.current) {
       if (user) {
-        // 로그인됨 → MainStack의 Home으로 리셋
         navigationRef.current?.dispatch(
           CommonActions.reset({
             index: 0,
@@ -169,7 +157,6 @@ function RootNavigator() {
           })
         );
       } else {
-        // 로그아웃됨 → AuthStack의 Intro로 리셋
         navigationRef.current?.dispatch(
           CommonActions.reset({
             index: 0,
@@ -180,6 +167,7 @@ function RootNavigator() {
     }
   }, [user, loading]);
 
+  // ✅ 조건부 return은 모든 Hook 다음에!
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -190,7 +178,8 @@ function RootNavigator() {
 
   return (
     <NavigationContainer
-      key={user ? "authenticated" : "unauthenticated"} // ✅ 이 한 줄만 추가!
+      ref={navigationRef}
+      key={user ? "authenticated" : "unauthenticated"}
     >
       <StatusBar style="light" />
       {user ? <MainStack /> : <AuthStack />}
