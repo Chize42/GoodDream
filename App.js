@@ -88,6 +88,7 @@ function MainStack() {
       <Stack.Screen name="EditAccount" component={EditAccountScreen} />
       <Stack.Screen name="계정 연동" component={LinkScreen} />
       <Stack.Screen name="고객센터" component={CustomerScreen} />
+      <Stack.Screen name="알림" component={NotificationScreen} />
       <Stack.Screen name="서비스 이용 문의" component={ServiceInquiryScreen} />
       <Stack.Screen name="문의 내역" component={InquiryHistoryScreen} />
       <Stack.Screen

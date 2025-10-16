@@ -165,6 +165,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
         <TouchableOpacity onPress={() => setInfoModalVisible(true)}>
           <Ionicons name="information-circle" size={24} color="#fff" />
         </TouchableOpacity>
+        </TouchableOpacity>
       </View>
 
       <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.pathContainer}>
