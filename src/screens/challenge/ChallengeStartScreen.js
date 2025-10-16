@@ -9,7 +9,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Ionicons } from "@expo/vector-icons";
 
@@ -23,7 +23,8 @@ export default function ChallengeStartScreen({ route, navigation }) {
   const scrollViewRef = useRef(null);
   const owlImg = "https://i.ibb.co/hxgqmQvL/image-1.png";
   const footprintImg = "https://i.ibb.co/xqYdhd5S/pngegg-1.png";
-  const successOwlImg = "https://i.ibb.co/hJTLCHsf/Kakao-Talk-20250524-151947386-1.png";
+  const successOwlImg =
+    "https://i.ibb.co/hJTLCHsf/Kakao-Talk-20250524-151947386-1.png";
 
   // ⭐️ 저장된 챌린지 데이터 불러오기 및 스크롤
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
       // 스크롤도 부엉이를 따라서 위로 올라가야 함
       const itemsFromTop = totalDays - currentDay;
       const yPosition = itemsFromTop * 100; // dayContainer height = 100
-      
+
       // 부엉이가 화면 중앙 정도에 오도록 조정
       const adjustedPosition = Math.max(0, yPosition - 150);
       scrollViewRef.current?.scrollTo({ y: adjustedPosition, animated: true });
@@ -56,7 +57,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
 
   const loadChallengeData = async () => {
     try {
-      const challengeData = await AsyncStorage.getItem('challengeData');
+      const challengeData = await AsyncStorage.getItem("challengeData");
       if (challengeData) {
         const { currentDay: savedDay } = JSON.parse(challengeData);
         if (savedDay) {
@@ -64,21 +65,21 @@ export default function ChallengeStartScreen({ route, navigation }) {
         }
       }
     } catch (error) {
-      console.error('챌린지 데이터 불러오기 오류:', error);
+      console.error("챌린지 데이터 불러오기 오류:", error);
     }
   };
 
   // ⭐️ 챌린지 데이터 업데이트
   const updateChallengeData = async (newDay) => {
     try {
-      const challengeData = await AsyncStorage.getItem('challengeData');
+      const challengeData = await AsyncStorage.getItem("challengeData");
       if (challengeData) {
         const data = JSON.parse(challengeData);
         data.currentDay = newDay;
-        await AsyncStorage.setItem('challengeData', JSON.stringify(data));
+        await AsyncStorage.setItem("challengeData", JSON.stringify(data));
       }
     } catch (error) {
-      console.error('챌린지 데이터 업데이트 오류:', error);
+      console.error("챌린지 데이터 업데이트 오류:", error);
     }
   };
 
@@ -99,10 +100,10 @@ export default function ChallengeStartScreen({ route, navigation }) {
   // ⭐️ 챌린지 초기화 함수
   const resetChallenge = async () => {
     try {
-      await AsyncStorage.removeItem('challengeData');
-      navigation.navigate('Challenge');
+      await AsyncStorage.removeItem("challengeData");
+      navigation.navigate("Challenge");
     } catch (error) {
-      console.error('챌린지 초기화 오류:', error);
+      console.error("챌린지 초기화 오류:", error);
     }
   };
 
@@ -138,11 +139,17 @@ export default function ChallengeStartScreen({ route, navigation }) {
             )}
 
             <View
-              style={[styles.circleContainer, isLeft ? styles.rowLeft : styles.rowRight]}
+              style={[
+                styles.circleContainer,
+                isLeft ? styles.rowLeft : styles.rowRight,
+              ]}
             >
               <View style={styles.circle}>
                 {isCompleted ? (
-                  <Image source={{ uri: footprintImg }} style={styles.footprint} />
+                  <Image
+                    source={{ uri: footprintImg }}
+                    style={styles.footprint}
+                  />
                 ) : isCurrentDay ? (
                   <Image source={{ uri: owlImg }} style={styles.owl} />
                 ) : null}
@@ -158,35 +165,59 @@ export default function ChallengeStartScreen({ route, navigation }) {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
+        </TouchableOpacity>
         {/* ⭐️ Home으로 이동하도록 수정 */}
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-          <Image source={{ uri: 'https://i.ibb.co/Dg5C8MzW/Arrow.png' }} style={styles.icon} />
+        <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+          <Image
+            source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
+            style={styles.icon}
+          />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setInfoModalVisible(true)}>
           <Ionicons name="information-circle" size={24} color="#fff" />
         </TouchableOpacity>
-        </TouchableOpacity>
+        
       </View>
 
-      <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.pathContainer}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.pathContainer}
+      >
         {renderChallengePath()}
       </ScrollView>
 
       <Text style={styles.streakText}>
-        <Text style={styles.blueText}>{currentDay > totalDays ? totalDays : currentDay}</Text>일 연속 도전 중!
+        <Text style={styles.blueText}>
+          {currentDay > totalDays ? totalDays : currentDay}
+        </Text>
+        일 연속 도전 중!
       </Text>
 
-      <Modal visible={infoModalVisible} transparent={true} animationType="fade" onRequestClose={() => setInfoModalVisible(false)}>
+      <Modal
+        visible={infoModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setInfoModalVisible(false)}
+      >
         <View style={styles.modalBackground}>
           <View style={styles.infoModalContent}>
-            <TouchableOpacity style={styles.closeBtn} onPress={() => setInfoModalVisible(false)}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setInfoModalVisible(false)}
+            >
               <Text style={styles.closeText}>×</Text>
             </TouchableOpacity>
             <Text style={styles.modalMainText}>
-              {(!totalDays || totalDays <= 0) ? (
-                <><Text style={styles.blueText}>기간없이</Text> 챌린지 중이에요</>
+              {!totalDays || totalDays <= 0 ? (
+                <>
+                  <Text style={styles.blueText}>기간없이</Text> 챌린지 중이에요
+                </>
               ) : (
-                <><Text style={styles.blueText}>{totalDays}</Text>일 챌린지 중이에요</>
+                <>
+                  <Text style={styles.blueText}>{totalDays}</Text>일 챌린지
+                  중이에요
+                </>
               )}
             </Text>
             {/* ⭐️ 챌린지 초기화 후 설정 화면으로 이동 */}
@@ -203,32 +234,54 @@ export default function ChallengeStartScreen({ route, navigation }) {
         </View>
       </Modal>
 
-      <Modal visible={successModalVisible} transparent={true} animationType="fade" onRequestClose={() => setSuccessModalVisible(false)}>
+      <Modal
+        visible={successModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSuccessModalVisible(false)}
+      >
         <View style={styles.modalBackground}>
           <View style={styles.successModalContent}>
-            <TouchableOpacity style={styles.closeBtn} onPress={() => setSuccessModalVisible(false)}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setSuccessModalVisible(false)}
+            >
               <Text style={styles.closeText}>×</Text>
             </TouchableOpacity>
-            <Image source={{ uri: successOwlImg }} style={styles.successOwlImg} />
+            <Image
+              source={{ uri: successOwlImg }}
+              style={styles.successOwlImg}
+            />
             <Text style={styles.successTitle}>오늘의 챌린지 성공!</Text>
-            <Text style={styles.successSubtitle}>내일도 부엉이와 함께 해요</Text>
+            <Text style={styles.successSubtitle}>
+              내일도 부엉이와 함께 해요
+            </Text>
           </View>
         </View>
       </Modal>
 
-      <Modal visible={completionModalVisible} transparent={true} animationType="fade" onRequestClose={() => setCompletionModalVisible(false)}>
+      <Modal
+        visible={completionModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setCompletionModalVisible(false)}
+      >
         <View style={styles.modalBackground}>
           <View style={styles.completionModalContent}>
-            <Text style={styles.completionTitle}>챌린지가 마무리 되었습니다</Text>
-            <Text style={styles.completionSubtitle}>챌린지를 다시 설정하시겠습니까?</Text>
+            <Text style={styles.completionTitle}>
+              챌린지가 마무리 되었습니다
+            </Text>
+            <Text style={styles.completionSubtitle}>
+              챌린지를 다시 설정하시겠습니까?
+            </Text>
             <View style={styles.completionButtonRow}>
               <TouchableOpacity
                 style={[styles.completionButton, styles.completionButtonNo]}
                 onPress={async () => {
                   setCompletionModalVisible(false);
                   // ⭐️ 챌린지 완료 후 데이터 삭제하고 Home으로 이동
-                  await AsyncStorage.removeItem('challengeData');
-                  navigation.navigate('Home');
+                  await AsyncStorage.removeItem("challengeData");
+                  navigation.navigate("Home");
                 }}
               >
                 <Text style={styles.completionButtonTextNo}>아니오</Text>
@@ -257,7 +310,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#19171C"
+    backgroundColor: "#19171C",
   },
   header: {
     width: "100%",
@@ -266,27 +319,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 30,
     alignItems: "center",
-    zIndex: 1
+    zIndex: 1,
   },
   icon: {
     width: 24,
     height: 24,
   },
   scrollView: {
-    width: '100%'
+    width: "100%",
   },
   pathContainer: {
     paddingTop: 20,
     paddingBottom: 100,
-    alignItems: "center"
+    alignItems: "center",
   },
   dayContainer: {
-    width: '100%',
+    width: "100%",
     height: 100,
-    position: 'relative',
+    position: "relative",
   },
   circleContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 18,
   },
   rowLeft: {
@@ -306,15 +359,15 @@ const styles = StyleSheet.create({
   footprint: {
     width: 42,
     height: 42,
-    resizeMode: "contain"
+    resizeMode: "contain",
   },
   owl: {
     width: 64,
     height: 64,
-    resizeMode: "contain"
+    resizeMode: "contain",
   },
   dotPathContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 50,
     bottom: 0,
     left: 0,
@@ -325,33 +378,33 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "#fff",
-    position: 'absolute',
+    position: "absolute",
   },
   dotL2R_1: {
-    top: '25%',
-    left: '40%',
+    top: "25%",
+    left: "40%",
   },
   dotL2R_2: {
-    top: '50%',
-    left: '50%',
+    top: "50%",
+    left: "50%",
     transform: [{ translateX: -4 }],
   },
   dotL2R_3: {
-    top: '75%',
-    left: '60%',
+    top: "75%",
+    left: "60%",
   },
   dotR2L_1: {
-    top: '25%',
-    right: '40%',
+    top: "25%",
+    right: "40%",
   },
   dotR2L_2: {
-    top: '50%',
-    right: '50%',
+    top: "50%",
+    right: "50%",
     transform: [{ translateX: 4 }],
   },
   dotR2L_3: {
-    top: '75%',
-    right: '60%',
+    top: "75%",
+    right: "60%",
   },
   streakText: {
     position: "absolute",
@@ -361,42 +414,42 @@ const styles = StyleSheet.create({
     paddingLeft: 30,
     fontSize: 20,
     color: "#fff",
-    fontWeight: "600"
+    fontWeight: "600",
   },
   blueText: {
     color: "#4074D8",
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   emptyText: {
     color: "#fff",
     fontSize: 18,
-    marginTop: 50
+    marginTop: 50,
   },
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
   },
   infoModalContent: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 20,
     paddingTop: 30,
-    width: '75%',
+    width: "75%",
     alignItems: "center",
-    position: "relative"
+    position: "relative",
   },
   closeBtn: {
     position: "absolute",
     top: 10,
     right: 16,
-    zIndex: 2
+    zIndex: 2,
   },
   closeText: {
     fontSize: 22,
     color: "#19171C",
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   modalMainText: {
     fontSize: 21,
@@ -405,14 +458,14 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    width: '100%',
+    borderTopColor: "#eee",
+    width: "100%",
     paddingTop: 10,
-    alignItems: 'center'
+    alignItems: "center",
   },
   resetButtonText: {
-    color: '#D9534F',
-    fontSize: 14
+    color: "#D9534F",
+    fontSize: 14,
   },
   successModalContent: {
     width: "75%",
@@ -420,78 +473,78 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     alignItems: "center",
-    position: "relative"
+    position: "relative",
   },
   successOwlImg: {
     width: 80,
     height: 80,
     resizeMode: "contain",
-    marginBottom: 10
+    marginBottom: 10,
   },
   successTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#19171C",
-    marginBottom: 4
+    marginBottom: 4,
   },
   successSubtitle: {
     fontSize: 14,
-    color: "#555"
+    color: "#555",
   },
   tempButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 30,
-    alignSelf: 'center',
-    backgroundColor: '#4074D8',
+    alignSelf: "center",
+    backgroundColor: "#4074D8",
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 20
+    borderRadius: 20,
   },
   tempButtonText: {
-    color: '#fff',
-    fontWeight: 'bold'
+    color: "#fff",
+    fontWeight: "bold",
   },
   completionModalContent: {
-    width: '75%',
-    backgroundColor: '#fff',
+    width: "75%",
+    backgroundColor: "#fff",
     borderRadius: 14,
     padding: 20,
-    alignItems: 'center'
+    alignItems: "center",
   },
   completionTitle: {
     fontSize: 17,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 4
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 4,
   },
   completionSubtitle: {
     fontSize: 13,
-    color: '#000',
-    marginBottom: 20
+    color: "#000",
+    marginBottom: 20,
   },
   completionButtonRow: {
-    flexDirection: 'row',
-    width: '100%'
+    flexDirection: "row",
+    width: "100%",
   },
   completionButton: {
     flex: 1,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#EFEFEF'
+    borderTopColor: "#EFEFEF",
   },
   completionButtonNo: {
     borderRightWidth: 1,
-    borderRightColor: '#EFEFEF'
+    borderRightColor: "#EFEFEF",
   },
   completionButtonTextNo: {
-    color: '#D9534F',
-    textAlign: 'center',
-    fontSize: 17
+    color: "#D9534F",
+    textAlign: "center",
+    fontSize: 17,
   },
   completionButtonTextYes: {
-    color: '#007AFF',
-    textAlign: 'center',
+    color: "#007AFF",
+    textAlign: "center",
     fontSize: 17,
-    fontWeight: 'bold'
+    fontWeight: "bold",
   },
 });
