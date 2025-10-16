@@ -21,8 +21,8 @@
     "@types/react": "^19.1.10",
     "expo": "^54.0.12",
     "expo-av": "~16.0.7",
-    "expo-document-picker": "~14.0.7",
     "expo-font": "~14.0.8",
+    "expo-image-picker": "~17.0.8",
     "expo-notifications": "^0.32.11",
     "expo-status-bar": "~3.0.8",
     "firebase": "^12.2.1",
@@ -37,8 +37,7 @@
     "react-native-sound": "^0.12.0",
     "react-native-svg": "15.12.1",
     "react-native-toast-message": "^2.3.3",
-    "react-redux": "^9.2.0",
-    "expo-image-picker": "~17.0.8"
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
