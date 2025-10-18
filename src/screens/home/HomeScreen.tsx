@@ -1,16 +1,8 @@
 // src/screens/HomeScreen.tsx
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import React, { useState, useEffect } from "react";
-import { auth, db } from "../../services/firebase"; // Firebase 설정 파일 경로
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../../services/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import {
   Dimensions,
   Image,
@@ -19,25 +11,27 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from "react-native";
 import WeekChart from "../../components/WeekChart";
-import { Ionicons } from '@expo/vector-icons'; 
 import { useAuth } from "../../contexts/AuthContext";
+import EnhancedSyncButton from "../../components/EnhancedSyncButton";
 
 const { width } = Dimensions.get("window");
 
 function HomeScreen({ navigation }: { navigation: any }) {
-  const { user } = useAuth(); // ✅ AuthContext에서 user 가져오기
-  const [username, setUsername] = useState("사용자"); // 기본값
+  const { user } = useAuth();
+  const [username, setUsername] = useState("사용자");
   const [loading, setLoading] = useState(true);
   const [weekData, setWeekData] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // 이번 주 날짜 계산 함수
   const getThisWeekDates = () => {
     const today = new Date();
-    const dayOfWeek = today.getDay(); // 0(일요일) ~ 6(토요일)
+    const dayOfWeek = today.getDay();
     const monday = new Date(today);
-    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); // 월요일로 설정
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
     const weekDates = [];
     const dayNames = ["월", "화", "수", "목", "금", "토", "일"];
@@ -46,9 +40,9 @@ function HomeScreen({ navigation }: { navigation: any }) {
       const date = new Date(monday);
       date.setDate(monday.getDate() + i);
       weekDates.push({
-        date: date.toISOString().split("T")[0], // YYYY-MM-DD 형식
+        date: date.toISOString().split("T")[0],
         dayName: dayNames[i],
-        data: null, // 초기값
+        data: null,
       });
     }
 
@@ -58,7 +52,6 @@ function HomeScreen({ navigation }: { navigation: any }) {
   // Firebase에서 수면 데이터 가져오기
   const fetchWeekSleepData = async () => {
     try {
-      // ✅ user 존재 확인
       if (!user?.uid) {
         console.log("❌ 사용자 정보가 없습니다");
         setWeekData(getThisWeekDates());
@@ -73,7 +66,6 @@ function HomeScreen({ navigation }: { navigation: any }) {
         `📖 주간 데이터 조회: ${user.uid} - ${startDate} ~ ${endDate}`
       );
 
-      // ✅ getSleepDataRange에 userId 전달
       const { getSleepDataRange } = await import("../../services/sleepService");
       const sleepDataMap = await getSleepDataRange(
         user.uid,
@@ -96,10 +88,24 @@ function HomeScreen({ navigation }: { navigation: any }) {
     }
   };
 
+  // Health Connect 동기화 완료 후 콜백
+  const handleSyncComplete = async (syncedData: any) => {
+    console.log("✅ Health Connect 동기화 완료, 화면 갱신");
+
+    // 주간 데이터 다시 로드
+    await fetchWeekSleepData();
+  };
+
+  // 새로고침
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchWeekSleepData();
+    setRefreshing(false);
+  };
+
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // ✅ user 존재 확인
         if (!user?.uid) {
           console.log("❌ 로그인 상태가 아닙니다");
           setLoading(false);
@@ -125,7 +131,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
     };
 
     loadUserData();
-  }, [user]); // ✅ user 의존성 추가
+  }, [user]);
 
   // 현재 날짜 포맷팅
   const getCurrentDate = () => {
@@ -155,6 +161,14 @@ function HomeScreen({ navigation }: { navigation: any }) {
     <ScrollView
       style={styles.homeScreen}
       contentContainerStyle={styles.scrollContent}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor="#fff"
+          colors={["#007AFF"]}
+        />
+      }
     >
       <View style={styles.homeContent}>
         <View style={styles.homeHeader}>
@@ -179,20 +193,24 @@ function HomeScreen({ navigation }: { navigation: any }) {
           </View>
         </View>
 
+        {/* ⭐ Health Connect 동기화 버튼 추가 */}
+        <View style={styles.syncButtonContainer}>
+          <EnhancedSyncButton
+            onSyncComplete={handleSyncComplete}
+            style={styles.syncButton}
+          />
+        </View>
+
         <View style={styles.weekly}>
           <Text style={styles.weeklyText}>weekly report</Text>
           <TouchableOpacity
             style={styles.seeMoreButton}
             onPress={() => {
-                const today = new Date().toISOString().split("T")[0];
-                navigation.navigate("SleepReport", { initialDate: today });
-              }}
+              const today = new Date().toISOString().split("T")[0];
+              navigation.navigate("SleepReport", { initialDate: today });
+            }}
           >
-            <Text
-              style={styles.seeMoreText}
-            >
-              더보기
-            </Text>
+            <Text style={styles.seeMoreText}>더보기</Text>
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -224,7 +242,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
             >
               <Image
                 source={require("../../../assets/soundOwl.png")}
-                style={styles.soundIllustration} // 사운드 이미지도 버블과 같은 크기로
+                style={styles.soundIllustration}
               />
               <Text style={styles.cardTitleT}>사운드</Text>
               <Text style={styles.cardSubtitleT}>MUSIC</Text>
@@ -236,7 +254,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
             >
               <Image
                 source={require("../../../assets/bubble.png")}
-                style={styles.bubbleIllustration} // 버블 이미지만 다른 스타일 적용
+                style={styles.bubbleIllustration}
               />
               <Text style={styles.cardTitle}>버블</Text>
               <Text style={styles.cardSubtitle}>BUBBLE</Text>
@@ -294,7 +312,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 20,
   },
   dateText: {
     fontSize: 17,
@@ -339,6 +357,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
   },
+  // ⭐ 동기화 버튼 컨테이너 스타일
+  syncButtonContainer: {
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  syncButton: {
+    width: "100%",
+  },
   weekly: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -357,10 +383,6 @@ const styles = StyleSheet.create({
     marginRight: 4,
     color: "#aaa",
   },
-  seeMore: {
-    color: "#aaa",
-    fontSize: 12,
-  },
   chartBox: {
     backgroundColor: "#1D1B20",
     borderRadius: 12,
@@ -368,11 +390,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     minHeight: 200,
   },
-  barChartPlaceholder: {
-    color: "#777",
-    fontSize: 12,
-  },
-  // 🔽 새롭게 수정된 카드 레이아웃
   cardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -395,13 +412,6 @@ const styles = StyleSheet.create({
     height: 95,
     marginBottom: 10,
   },
-  card: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 12,
-    height: 200,
-    position: "relative",
-  },
   purple: {
     backgroundColor: "#7593CE",
   },
@@ -418,15 +428,13 @@ const styles = StyleSheet.create({
     top: 16,
     right: 16,
   },
-  // 🔽 사운드 이미지를 위한 새로운 스타일 (버블과 동일한 크기)
   soundIllustration: {
-    width: 60, // 버블과 같은 크기
-    height: 60, // 버블과 같은 크기
+    width: 60,
+    height: 60,
     position: "absolute",
     top: 15,
     right: 9,
   },
-  // 🔽 버블 이미지를 위한 스타일
   bubbleIllustration: {
     width: 50,
     height: 50,

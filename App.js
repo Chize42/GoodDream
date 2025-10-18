@@ -58,6 +58,7 @@ import Play from "./src/screens/startsleeping/Play";
 //auth context 관련 코드 임포트
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { CommonActions } from "@react-navigation/native";
+import { SyncProvider } from "./src/contexts/SyncContext";
 
 const Stack = createStackNavigator();
 
@@ -193,11 +194,13 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <MusicProvider>
-        <PlaylistProvider>
-          <RootNavigator />
-        </PlaylistProvider>
-      </MusicProvider>
+      <SyncProvider>
+        <MusicProvider>
+          <PlaylistProvider>
+            <RootNavigator />
+          </PlaylistProvider>
+        </MusicProvider>
+      </SyncProvider>
     </AuthProvider>
   );
 }

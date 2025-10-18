@@ -21,6 +21,9 @@
       }
     },
     "android": {
+      "minSdkVersion": 26,
+      "targetSdkVersion": 36,
+      "compileSdkVersion": 36,
       "adaptiveIcon": {
         "backgroundColor": "#111827"
       },
@@ -34,7 +37,9 @@
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_IMAGES"
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -42,12 +47,31 @@
     },
     "plugins": [
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "문의하기에서 이미지를 첨부하기 위해 사진 라이브러리 접근 권한이 필요합니다.",
           "cameraPermission": "문의하기에서 사진을 촬영하기 위해 카메라 접근 권한이 필요합니다."
         }
+      ],
+      [
+        "react-native-health-connect",
+        {
+          "permissions": ["readSleepSession", "readSleepStage"]
+        }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "38ece0b1-f342-45c4-9b26-686a9277eef0"
+      }
+    }
   }
 }
