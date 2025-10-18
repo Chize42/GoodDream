@@ -1,12 +1,22 @@
 import React from "react";
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Image,
+} from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function LinkScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+      <TouchableOpacity
+        style={styles.backBtn}
+        onPress={() => navigation.goBack()}
+      >
         <Icon name="chevron-back" size={26} color="#fff" marginTop={30} />
       </TouchableOpacity>
 

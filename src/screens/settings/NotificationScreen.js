@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Switch } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Switch,
+} from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-const STORAGE_KEY = '@notification_settings'; 
+const STORAGE_KEY = "@notification_settings";
 
 export default function NotificationScreen({ navigation }) {
   const [settings, setSettings] = useState({
@@ -22,31 +29,31 @@ export default function NotificationScreen({ navigation }) {
           setSettings(JSON.parse(savedSettings));
         }
       } catch (e) {
-        console.error('Failed to load settings.', e);
+        console.error("Failed to load settings.", e);
       }
     };
     loadSettings();
-  }, []); 
+  }, []);
 
   useEffect(() => {
     const saveSettings = async () => {
       try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       } catch (e) {
-        console.error('Failed to save settings.', e);
+        console.error("Failed to save settings.", e);
       }
     };
     saveSettings();
   }, [settings]);
 
   const updateSetting = (key, value) => {
-    setSettings(prevSettings => ({
+    setSettings((prevSettings) => ({
       ...prevSettings,
       [key]: value,
     }));
   };
 
-  const toggleAll = value => {
+  const toggleAll = (value) => {
     setSettings({
       all: value,
       sms: value,
@@ -64,7 +71,7 @@ export default function NotificationScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>알림</Text>
       </View>
-      
+
       <View style={styles.section}>
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>전체 알림</Text>
@@ -85,7 +92,7 @@ export default function NotificationScreen({ navigation }) {
             <Text style={styles.label}>문자 알림</Text>
             <Switch
               value={settings.sms}
-              onValueChange={value => updateSetting('sms', value)}
+              onValueChange={(value) => updateSetting("sms", value)}
               disabled={!settings.all}
               trackColor={{ false: "#555", true: "#295be7" }}
               thumbColor={settings.sms ? "#fff" : "#ccc"}
@@ -95,7 +102,7 @@ export default function NotificationScreen({ navigation }) {
             <Text style={styles.label}>이메일 알림</Text>
             <Switch
               value={settings.email}
-              onValueChange={value => updateSetting('email', value)}
+              onValueChange={(value) => updateSetting("email", value)}
               disabled={!settings.all}
               trackColor={{ false: "#555", true: "#295be7" }}
               thumbColor={settings.email ? "#fff" : "#ccc"}
@@ -106,13 +113,15 @@ export default function NotificationScreen({ navigation }) {
 
       <View style={styles.group}>
         <Text style={styles.groupLabel}>활동 알림</Text>
-        <Text style={styles.groupDescription}>앱 업데이트, 새로운 기능 알림</Text>
+        <Text style={styles.groupDescription}>
+          앱 업데이트, 새로운 기능 알림
+        </Text>
         <View style={styles.sectionInner}>
           <View style={styles.sectionRow}>
             <Text style={styles.label}>푸시 알림</Text>
             <Switch
               value={settings.push}
-              onValueChange={value => updateSetting('push', value)}
+              onValueChange={(value) => updateSetting("push", value)}
               disabled={!settings.all}
               trackColor={{ false: "#555", true: "#295be7" }}
               thumbColor={settings.push ? "#fff" : "#ccc"}
@@ -122,7 +131,7 @@ export default function NotificationScreen({ navigation }) {
             <Text style={styles.label}>야간 푸시 알림(21~08시)</Text>
             <Switch
               value={settings.nightPush}
-              onValueChange={value => updateSetting('nightPush', value)}
+              onValueChange={(value) => updateSetting("nightPush", value)}
               disabled={!settings.all}
               trackColor={{ false: "#555", true: "#295be7" }}
               thumbColor={settings.nightPush ? "#fff" : "#ccc"}
@@ -173,7 +182,7 @@ const styles = StyleSheet.create({
   },
   group: {
     marginBottom: 18,
-     margin: 20,
+    margin: 20,
   },
   groupLabel: {
     color: "#fff",
