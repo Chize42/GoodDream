@@ -113,9 +113,10 @@ export default function ChallengeScreen({ navigation }) {
       const challengeData = {
         totalDays: selectedDays,
         startDate: new Date().toISOString(),
+        currentDay: 1,
       };
       await AsyncStorage.setItem('challengeData', JSON.stringify(challengeData));
-      navigation.navigate("ChallengeStart", challengeData);
+      navigation.replace("ChallengeStart", challengeData);
     } catch (error) {
       console.error('챌린지 저장 오류:', error);
     }
