@@ -20,6 +20,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [completionModalVisible, setCompletionModalVisible] = useState(false);
   const [currentDay, setCurrentDay] = useState(1);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const scrollViewRef = useRef(null);
   const owlImg = "https://i.ibb.co/hxgqmQvL/image-1.png";
   const footprintImg = "https://i.ibb.co/xqYdhd5S/pngegg-1.png";
@@ -35,23 +36,35 @@ export default function ChallengeStartScreen({ route, navigation }) {
   useEffect(() => {
     if (totalDays > 0) {
       setTimeout(() => {
-        scrollToCurrentDay();
+        scrollToCurrentDay(isInitialLoad);
+        if (isInitialLoad) {
+          setIsInitialLoad(false);
+        }
       }, 300);
     }
   }, [currentDay, totalDays]);
 
-  const scrollToCurrentDay = () => {
-    if (scrollViewRef.current && totalDays > 0) {
-      // 역순으로 렌더링: totalDays부터 1까지 (위에서 아래로)
-      // currentDay가 증가하면 부엉이는 위로 올라감
-      // currentDay가 1이면 맨 아래에 있고, totalDays면 맨 위에 있음
-      // 스크롤도 부엉이를 따라서 위로 올라가야 함
-      const itemsFromTop = totalDays - currentDay;
+const scrollToCurrentDay = (isInitial = false) => {
+    if (scrollViewRef.current) {
+      const minVisibleItems = 10; // renderChallengePath와 동일한 값
+      const pathLength = totalDays > 0 
+        ? totalDays 
+        : Math.max(currentDay, minVisibleItems);
+
+      if (pathLength <= 0) return; // 렌더링된 아이템이 없으면 스크롤 안 함
+
+      // 역순으로 렌더링: pathLength부터 1까지 (위에서 아래로)
+      // 부엉이의 0-based index (맨 위가 0)
+      const itemsFromTop = pathLength - currentDay;
       const yPosition = itemsFromTop * 100; // dayContainer height = 100
 
       // 부엉이가 화면 중앙 정도에 오도록 조정
       const adjustedPosition = Math.max(0, yPosition - 150);
-      scrollViewRef.current?.scrollTo({ y: adjustedPosition, animated: true });
+      
+      scrollViewRef.current?.scrollTo({ 
+        y: adjustedPosition, 
+        animated: !isInitial
+      });
     }
   };
 
@@ -69,7 +82,6 @@ export default function ChallengeStartScreen({ route, navigation }) {
     }
   };
 
-  // ⭐️ 챌린지 데이터 업데이트
   const updateChallengeData = async (newDay) => {
     try {
       const challengeData = await AsyncStorage.getItem("challengeData");
@@ -84,20 +96,21 @@ export default function ChallengeStartScreen({ route, navigation }) {
   };
 
   const handleNextDay = async () => {
-    if (currentDay > totalDays) return;
+    if (totalDays > 0 && currentDay > totalDays) {
+      return;
+    }
 
     const nextDay = currentDay + 1;
     setCurrentDay(nextDay);
     await updateChallengeData(nextDay);
 
-    if (nextDay > totalDays) {
+    if (totalDays > 0 && nextDay > totalDays) {
       setCompletionModalVisible(true);
     } else {
       setSuccessModalVisible(true);
     }
   };
 
-  // ⭐️ 챌린지 초기화 함수
   const resetChallenge = async () => {
     try {
       await AsyncStorage.removeItem("challengeData");
@@ -106,14 +119,28 @@ export default function ChallengeStartScreen({ route, navigation }) {
       console.error("챌린지 초기화 오류:", error);
     }
   };
-
   const renderChallengePath = () => {
-    if (!totalDays || totalDays <= 0) {
+    
+
+    const minVisibleItems = 10; 
+    
+    const pathLength = totalDays > 0
+      ? totalDays 
+      : Math.max(currentDay, minVisibleItems);
+
+    if (pathLength <= 0) { 
       return <Text style={styles.emptyText}>기간 없이 자유롭게 도전해요!</Text>;
     }
-    return Array.from({ length: totalDays }, (_, i) => i + 1)
+
+    return Array.from({ length: pathLength }, (_, i) => i + 1)
       .reverse()
       .map((day) => {
+        
+        
+        if (totalDays === 0 && day > currentDay) {
+          return <View key={day} style={styles.dayContainer} />;
+        }
+
         const isCompleted = day < currentDay;
         const isCurrentDay = day === currentDay;
         const isLeft = (totalDays - day) % 2 === 0;
@@ -163,15 +190,8 @@ export default function ChallengeStartScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        {/* ⭐️ Home으로 이동하도록 수정 */}
         <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-          <Image
-            source={{ uri: "https://i.ibb.co/Dg5C8MzW/Arrow.png" }}
-            style={styles.icon}
-          />
+          <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setInfoModalVisible(true)}>
           <Ionicons name="information-circle" size={24} color="#fff" />
@@ -189,7 +209,7 @@ export default function ChallengeStartScreen({ route, navigation }) {
 
       <Text style={styles.streakText}>
         <Text style={styles.blueText}>
-          {currentDay > totalDays ? totalDays : currentDay}
+          {totalDays > 0 && currentDay > totalDays ? totalDays : currentDay}
         </Text>
         일 연속 도전 중!
       </Text>
