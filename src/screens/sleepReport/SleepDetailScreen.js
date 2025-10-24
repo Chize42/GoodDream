@@ -1,4 +1,4 @@
-// src/screens/SleepDetailScreen.js - NaN 방지 수정된 버전
+// src/screens/SleepDetailScreen.js
 import React from "react";
 import {
   View,
@@ -15,23 +15,44 @@ import { colors, typography, spacing } from "../../styles/globalStyles";
 const SleepDetailScreen = ({ navigation, route }) => {
   const { sleepData, date } = route.params;
 
-  // 안전한 데이터 처리 - undefined/null을 0으로 변환
+  // 👇 실제 수면 시간 계산 (duration 우선 사용)
+  const calculateActualSleep = () => {
+    // 수면 단계 데이터가 있으면 합산
+    if (
+      (sleepData.deep || 0) + (sleepData.light || 0) + (sleepData.rem || 0) >
+      0
+    ) {
+      return (
+        (sleepData.deep || 0) + (sleepData.light || 0) + (sleepData.rem || 0)
+      );
+    }
+
+    // Health Connect duration이 있으면 사용 (분 → 시간)
+    if (sleepData.duration && sleepData.duration > 0) {
+      return sleepData.duration / 60;
+    }
+
+    // 둘 다 없으면 0
+    return 0;
+  };
+
+  const actualSleepTime = calculateActualSleep();
+
+  // 👇 총 침대 시간 (실제 수면 + 깸)
+  const totalBedTime = actualSleepTime + (sleepData.awake || 0);
+
+  // 안전한 데이터 처리
   const safeData = {
-    ...sleepData,
     deep: sleepData.deep || 0,
     light: sleepData.light || 0,
     rem: sleepData.rem || 0,
     awake: sleepData.awake || 0,
     score: sleepData.score || 0,
-    actualSleep: sleepData.actualSleep || 0,
-    totalSleepDuration: sleepData.totalSleepDuration || 0,
     bedTime: sleepData.bedTime || "23:00",
     wakeTime: sleepData.wakeTime || "07:00",
+    actualSleep: actualSleepTime, // 👈 계산된 값
+    totalSleepDuration: totalBedTime, // 👈 계산된 값
   };
-
-  // 수면 단계 데이터가 있는지 확인
-  const hasSleepStageData =
-    safeData.deep > 0 || safeData.light > 0 || safeData.rem > 0;
 
   // 날짜 포맷팅
   const formatDate = (dateString) => {
@@ -52,7 +73,7 @@ const SleepDetailScreen = ({ navigation, route }) => {
     return `${String(displayHour).padStart(2, "0")}h ${minute}m`;
   };
 
-  // 시간을 시간과 분으로 변환하는 함수 (안전한 처리)
+  // 시간을 시간과 분으로 변환하는 함수
   const formatDuration = (hours) => {
     const safeHours = hours || 0;
     const h = Math.floor(safeHours);
@@ -60,37 +81,7 @@ const SleepDetailScreen = ({ navigation, route }) => {
     return { hours: h, minutes: m };
   };
 
-  // 수면 효율 계산 (안전한 처리)
-  const sleepEfficiency =
-    safeData.totalSleepDuration > 0
-      ? Math.round((safeData.actualSleep / safeData.totalSleepDuration) * 100)
-      : 0;
-
-  // 실제 수면 시간 계산 (수면 단계 데이터가 있으면 사용, 없으면 기본 계산)
-  const actualSleepTime = hasSleepStageData
-    ? safeData.actualSleep
-    : (() => {
-        // 취침/기상 시간으로 계산
-        const [bedHour, bedMin] = safeData.bedTime.split(":").map(Number);
-        const [wakeHour, wakeMin] = safeData.wakeTime.split(":").map(Number);
-
-        let bedTimeMinutes = bedHour * 60 + bedMin;
-        let wakeTimeMinutes = wakeHour * 60 + wakeMin;
-
-        if (wakeTimeMinutes <= bedTimeMinutes) {
-          wakeTimeMinutes += 24 * 60;
-        }
-
-        return (wakeTimeMinutes - bedTimeMinutes) / 60;
-      })();
-
-  // 총 침대 시간 계산
-  const totalBedTime =
-    safeData.totalSleepDuration > 0
-      ? safeData.totalSleepDuration
-      : actualSleepTime;
-
-  // 수면 단계 데이터 - 깸 추가 (컬러 동그라미 아이콘 버전)
+  // 수면 단계 데이터
   const sleepStages = [
     {
       key: "deep",
@@ -139,13 +130,13 @@ const SleepDetailScreen = ({ navigation, route }) => {
         {/* 메인 차트 */}
         <View style={styles.chartContainer}>
           <CircularProgress
-            score={sleepData.score}
-            sleepData={sleepData}
+            score={safeData.score}
+            sleepData={safeData}
             size={200}
           />
         </View>
 
-        {/* 수면 단계 블록들 - 원래대로 */}
+        {/* 수면 단계 블록들 */}
         <View style={styles.stagesRowContainer}>
           {sleepStages.map((stage, index) => {
             const duration = formatDuration(stage.value);
@@ -168,7 +159,7 @@ const SleepDetailScreen = ({ navigation, route }) => {
           })}
         </View>
 
-        {/* 수면 시간 정보 - 새로운 레이아웃 */}
+        {/* 수면 시간 정보 */}
         <View style={styles.infoSection}>
           <View style={styles.infoItem}>
             <View style={styles.infoIconContainer}>
@@ -189,10 +180,10 @@ const SleepDetailScreen = ({ navigation, route }) => {
             <View style={styles.infoContent}>
               <View style={styles.timeRow}>
                 <Text style={styles.infoTime}>
-                  {sleepData.actualSleep?.toFixed(1) || "0.0"}h
+                  {safeData.actualSleep.toFixed(1)}h
                 </Text>
                 <Text style={styles.totalSleepTime}>
-                  /{sleepData.totalSleepDuration?.toFixed(1) || "0.0"}h
+                  /{safeData.totalSleepDuration.toFixed(1)}h
                 </Text>
               </View>
               <Text style={styles.infoLabel}>실수면시간</Text>
@@ -200,7 +191,7 @@ const SleepDetailScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* 수면 비교 정보 - 하단 NaN 부분만 수정 */}
+        {/* 수면 비교 정보 */}
         <View style={styles.infoSection}>
           <View style={styles.infoItem}>
             <View style={styles.infoIconContainer}>
@@ -212,8 +203,8 @@ const SleepDetailScreen = ({ navigation, route }) => {
             </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoTime}>
-                {sleepData.actualSleep
-                  ? Math.round((sleepData.actualSleep / 8) * 100)
+                {safeData.actualSleep > 0
+                  ? Math.round((safeData.actualSleep / 8) * 100)
                   : 0}
                 %
               </Text>
@@ -227,8 +218,8 @@ const SleepDetailScreen = ({ navigation, route }) => {
             </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoTime}>
-                {sleepData.actualSleep
-                  ? Math.round((sleepData.actualSleep / 7.2) * 100)
+                {safeData.actualSleep > 0
+                  ? Math.round((safeData.actualSleep / 7.2) * 100)
                   : 0}
                 %
               </Text>
@@ -238,7 +229,7 @@ const SleepDetailScreen = ({ navigation, route }) => {
         </View>
 
         {/* 수면 피드백 컴포넌트 */}
-        <SleepFeedback sleepData={sleepData} />
+        <SleepFeedback sleepData={safeData} />
       </ScrollView>
     </View>
   );
@@ -280,8 +271,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 40,
   },
-
-  // 한 줄 배치 스타일 (배경 없음) - 여백 조정
   stagesRowContainer: {
     flexDirection: "row",
     paddingHorizontal: 12,
@@ -318,29 +307,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-
-  // 수면 단계 데이터가 없을 때 표시할 스타일 추가
-  noStageDataContainer: {
-    alignItems: "center",
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-    marginBottom: 32,
-  },
-  noStageDataText: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  noStageDataSubText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 18,
-  },
-
-  // 새로운 정보 섹션 스타일 (배경 없음, 아이콘 왼쪽) - 오른쪽으로 이동
   infoSection: {
     flexDirection: "row",
     paddingHorizontal: 32,

@@ -36,6 +36,34 @@ export const requestNotificationPermissions = async () => {
   }
 };
 
+// 다음 발생 시간 계산 함수
+const getNextOccurrence = (weekday, hour, minute) => {
+  const now = new Date();
+  const targetDate = new Date();
+
+  // weekday: 1(일)~7(토) -> JS weekday: 0(일)~6(토)
+  const targetWeekday = weekday === 1 ? 0 : weekday - 1;
+  const currentWeekday = now.getDay();
+
+  let daysUntil = targetWeekday - currentWeekday;
+
+  // 같은 요일인데 이미 시간이 지났으면 다음주로
+  if (
+    daysUntil === 0 &&
+    (now.getHours() > hour ||
+      (now.getHours() === hour && now.getMinutes() >= minute))
+  ) {
+    daysUntil = 7;
+  } else if (daysUntil < 0) {
+    daysUntil += 7;
+  }
+
+  targetDate.setDate(targetDate.getDate() + daysUntil);
+  targetDate.setHours(hour, minute, 0, 0);
+
+  return targetDate;
+};
+
 // 스케줄에 따른 로컬 알림 등록
 export const scheduleLocalNotifications = async (schedule) => {
   try {
@@ -44,6 +72,7 @@ export const scheduleLocalNotifications = async (schedule) => {
     console.log("요일:", schedule.days);
     console.log("잠자리:", schedule.bedtime);
     console.log("기상:", schedule.wakeup);
+    console.log("Platform:", Platform.OS);
 
     await cancelScheduleNotifications(schedule.id);
 
@@ -64,33 +93,9 @@ export const scheduleLocalNotifications = async (schedule) => {
 
     const notificationIds = [];
 
-    // 다음 발생 시간 계산 함수
-    const getNextOccurrence = (weekday, hour, minute) => {
-      const now = new Date();
-      const targetDate = new Date();
-
-      const currentWeekday = now.getDay();
-      const targetWeekday = weekday === 1 ? 0 : weekday - 1;
-
-      let daysUntil = targetWeekday - currentWeekday;
-      if (
-        daysUntil < 0 ||
-        (daysUntil === 0 &&
-          (now.getHours() > hour ||
-            (now.getHours() === hour && now.getMinutes() >= minute)))
-      ) {
-        daysUntil += 7;
-      }
-
-      targetDate.setDate(targetDate.getDate() + daysUntil);
-      targetDate.setHours(hour, minute, 0, 0);
-
-      return targetDate;
-    };
-
     for (const day of schedule.days) {
       const weekday = dayMapping[day];
-      console.log(`${day}요일 처리 중... weekday=${weekday}`);
+      console.log(`\n${day}요일 처리 중... weekday=${weekday}`);
 
       if (!weekday) continue;
 
@@ -98,28 +103,71 @@ export const scheduleLocalNotifications = async (schedule) => {
       if (schedule.notifications.bedtime?.enabled) {
         const [bedHours, bedMinutes] = schedule.bedtime.split(":").map(Number);
         const nextBedtime = getNextOccurrence(weekday, bedHours, bedMinutes);
-        console.log(`다음 잠자리 알림 시간: ${nextBedtime}`);
+
+        console.log(
+          `${day}요일 잠자리 알림 예약: ${nextBedtime.toLocaleString("ko-KR")}`
+        );
 
         try {
-          const bedtimeId = await Notifications.scheduleNotificationAsync({
-            content: {
-              title: schedule.notifications.bedtime.title,
-              body: schedule.notifications.bedtime.body,
-              data: {
-                type: "bedtime",
-                scheduleId: schedule.id,
-                scheduleName: schedule.name,
+          let bedtimeId;
+
+          if (Platform.OS === "ios") {
+            // iOS: calendar trigger 사용
+            bedtimeId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title: schedule.notifications.bedtime.title,
+                body: schedule.notifications.bedtime.body,
+                data: {
+                  type: "bedtime",
+                  scheduleId: schedule.id,
+                  scheduleName: schedule.name,
+                  day: day,
+                },
               },
-            },
-            trigger: {
-              date: nextBedtime,
-              repeats: false,
-            },
-          });
-          console.log(`잠자리 알림 ID: ${bedtimeId}`);
+              trigger: {
+                type: "calendar",
+                repeats: true,
+                weekday: weekday,
+                hour: bedHours,
+                minute: bedMinutes,
+              },
+            });
+          } else {
+            // Android: date trigger 사용 (매주 4개씩 미리 예약)
+            for (let i = 0; i < 4; i++) {
+              const futureDate = new Date(nextBedtime);
+              futureDate.setDate(futureDate.getDate() + i * 7);
+
+              const id = await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: schedule.notifications.bedtime.title,
+                  body: schedule.notifications.bedtime.body,
+                  data: {
+                    type: "bedtime",
+                    scheduleId: schedule.id,
+                    scheduleName: schedule.name,
+                    day: day,
+                    weekIndex: i,
+                  },
+                },
+                trigger: {
+                  date: futureDate,
+                },
+              });
+
+              if (i === 0) bedtimeId = id;
+              console.log(
+                `  → ${i + 1}주차 예약 완료: ${futureDate.toLocaleString(
+                  "ko-KR"
+                )}`
+              );
+            }
+          }
+
+          console.log(`✅ 잠자리 알림 ID: ${bedtimeId}`);
           notificationIds.push(bedtimeId);
         } catch (error) {
-          console.error(`${day}요일 잠자리 알림 등록 실패:`, error);
+          console.error(`❌ ${day}요일 잠자리 알림 등록 실패:`, error);
         }
       }
 
@@ -127,33 +175,88 @@ export const scheduleLocalNotifications = async (schedule) => {
       if (schedule.notifications.wakeup?.enabled) {
         const [wakeHours, wakeMinutes] = schedule.wakeup.split(":").map(Number);
         const nextWakeup = getNextOccurrence(weekday, wakeHours, wakeMinutes);
-        console.log(`다음 기상 알림 시간: ${nextWakeup}`);
+
+        console.log(
+          `${day}요일 기상 알림 예약: ${nextWakeup.toLocaleString("ko-KR")}`
+        );
 
         try {
-          const wakeupId = await Notifications.scheduleNotificationAsync({
-            content: {
-              title: schedule.notifications.wakeup.title,
-              body: schedule.notifications.wakeup.body,
-              data: {
-                type: "wakeup",
-                scheduleId: schedule.id,
-                scheduleName: schedule.name,
+          let wakeupId;
+
+          if (Platform.OS === "ios") {
+            // iOS: calendar trigger 사용
+            wakeupId = await Notifications.scheduleNotificationAsync({
+              content: {
+                title: schedule.notifications.wakeup.title,
+                body: schedule.notifications.wakeup.body,
+                data: {
+                  type: "wakeup",
+                  scheduleId: schedule.id,
+                  scheduleName: schedule.name,
+                  day: day,
+                },
               },
-            },
-            trigger: {
-              date: nextWakeup,
-              repeats: false,
-            },
-          });
-          console.log(`기상 알림 ID: ${wakeupId}`);
+              trigger: {
+                type: "calendar",
+                repeats: true,
+                weekday: weekday,
+                hour: wakeHours,
+                minute: wakeMinutes,
+              },
+            });
+          } else {
+            // Android: date trigger 사용 (매주 4개씩 미리 예약)
+            for (let i = 0; i < 4; i++) {
+              const futureDate = new Date(nextWakeup);
+              futureDate.setDate(futureDate.getDate() + i * 7);
+
+              const id = await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: schedule.notifications.wakeup.title,
+                  body: schedule.notifications.wakeup.body,
+                  data: {
+                    type: "wakeup",
+                    scheduleId: schedule.id,
+                    scheduleName: schedule.name,
+                    day: day,
+                    weekIndex: i,
+                  },
+                },
+                trigger: {
+                  date: futureDate,
+                },
+              });
+
+              if (i === 0) wakeupId = id;
+              console.log(
+                `  → ${i + 1}주차 예약 완료: ${futureDate.toLocaleString(
+                  "ko-KR"
+                )}`
+              );
+            }
+          }
+
+          console.log(`✅ 기상 알림 ID: ${wakeupId}`);
           notificationIds.push(wakeupId);
         } catch (error) {
-          console.error(`${day}요일 기상 알림 등록 실패:`, error);
+          console.error(`❌ ${day}요일 기상 알림 등록 실패:`, error);
         }
       }
     }
 
-    console.log(`총 ${notificationIds.length}개 알림 등록 완료`);
+    console.log(`\n✅ 총 ${notificationIds.length}개 알림 그룹 등록 완료`);
+    console.log("\n등록된 알림 확인:");
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    console.log(`전체 등록된 알림 수: ${scheduled.length}개`);
+    scheduled.forEach((n) => {
+      const trigger = n.trigger;
+      const triggerTime =
+        trigger.type === "calendar"
+          ? `매주 요일${trigger.weekday} ${trigger.hour}:${trigger.minute}`
+          : new Date(trigger.value * 1000).toLocaleString("ko-KR");
+      console.log(`- ${n.content.title} | ${triggerTime}`);
+    });
+
     return notificationIds;
   } catch (error) {
     console.error("로컬 알림 등록 실패:", error);

@@ -34,6 +34,7 @@ import AdvertisementInquiryScreen from "./src/screens/settings/AdvertisementInqu
 import CompletedInquiryScreen from "./src/screens/settings/CompletedInquiryScreen";
 import InquiryDetailScreen from "./src/screens/settings/InquiryDetailScreen";
 import NotificationScreen from "./src/screens/settings/NotificationScreen";
+import HealthConnectSettingsScreen from "./src/screens/settings/HealthConnectSettingsScreen";
 
 //관리자 모드 화면들 추가
 import AdminInquiryDashboard from "./src/screens/admin/AdminInquiryDashboard";
@@ -58,6 +59,7 @@ import Play from "./src/screens/startsleeping/Play";
 //auth context 관련 코드 임포트
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { CommonActions } from "@react-navigation/native";
+import { SyncProvider } from "./src/contexts/SyncContext";
 
 const Stack = createStackNavigator();
 
@@ -104,6 +106,10 @@ function MainStack() {
       <Stack.Screen name="알림" component={NotificationScreen} />
       <Stack.Screen name="서비스 이용 문의" component={ServiceInquiryScreen} />
       <Stack.Screen name="문의 내역" component={InquiryHistoryScreen} />
+      <Stack.Screen
+        name="HealthConnectSettings"
+        component={HealthConnectSettingsScreen}
+      />
       <Stack.Screen
         name="CompletedInquiryScreen"
         component={CompletedInquiryScreen}
@@ -193,11 +199,13 @@ function RootNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <MusicProvider>
-        <PlaylistProvider>
-          <RootNavigator />
-        </PlaylistProvider>
-      </MusicProvider>
+      <SyncProvider>
+        <MusicProvider>
+          <PlaylistProvider>
+            <RootNavigator />
+          </PlaylistProvider>
+        </MusicProvider>
+      </SyncProvider>
     </AuthProvider>
   );
 }

@@ -173,6 +173,7 @@ const SleepReportScreen = ({ navigation, route }) => {
   }, [route?.params?.initialDate]);
 
   // 수면 시간 저장 함수
+  // 수면 시간 저장 함수
   const handleSaveSleepTime = async (newBedTime, newWakeTime) => {
     try {
       if (!user?.uid) {
@@ -182,10 +183,25 @@ const SleepReportScreen = ({ navigation, route }) => {
 
       setLoading(true);
 
-      // ✅ Firebase에 업데이트
+      // 👇 수면 시간(분) 계산
+      const [bedHour, bedMin] = newBedTime.split(":").map(Number);
+      const [wakeHour, wakeMin] = newWakeTime.split(":").map(Number);
+
+      let bedTimeMinutes = bedHour * 60 + bedMin;
+      let wakeTimeMinutes = wakeHour * 60 + wakeMin;
+
+      if (wakeTimeMinutes <= bedTimeMinutes) {
+        wakeTimeMinutes += 24 * 60;
+      }
+
+      const durationMinutes = wakeTimeMinutes - bedTimeMinutes;
+
+      // ✅ Firebase에 업데이트 (duration 추가, score 제거)
       await updateSleepData(user.uid, selectedDate, {
         bedTime: newBedTime,
         wakeTime: newWakeTime,
+        duration: durationMinutes, // 👈 duration 추가
+        // score는 업데이트하지 않음 - CircularProgress가 자동 계산
       });
 
       // 로컬 상태 업데이트
@@ -195,6 +211,7 @@ const SleepReportScreen = ({ navigation, route }) => {
           ...prevData[selectedDate],
           bedTime: newBedTime,
           wakeTime: newWakeTime,
+          duration: durationMinutes, // 👈 로컬 상태에도 duration 업데이트
         },
       }));
 
@@ -268,22 +285,30 @@ const SleepReportScreen = ({ navigation, route }) => {
     return weekData;
   };
 
+  // getWeeklyAverage 함수 수정
   const getWeeklyAverage = () => {
     const weekData = getWeekData();
     const validData = weekData.filter((day) => day.data).map((day) => day.data);
     if (validData.length === 0)
       return { score: 0, avgSleepHours: 0, avgSleepMinutes: 0 };
 
+    // 👇 평균 점수 계산 (score 필드 사용)
     const avgScore = Math.round(
-      validData.reduce((sum, day) => sum + day.score, 0) / validData.length
+      validData.reduce((sum, day) => sum + (day.score || 0), 0) /
+        validData.length
     );
+
     const totalSleep =
       validData.reduce((sum, day) => {
-        return sum + day.deep + day.light + day.rem;
+        // duration이 있으면 분을 시간으로 변환, 없으면 deep+light+rem 사용
+        if (day.duration) {
+          return sum + day.duration / 60;
+        }
+        return sum + (day.deep || 0) + (day.light || 0) + (day.rem || 0);
       }, 0) / validData.length;
 
     return {
-      score: avgScore,
+      score: avgScore, // 👈 평균 점수
       avgSleepHours: Math.floor(totalSleep),
       avgSleepMinutes: Math.round((totalSleep % 1) * 60),
     };
@@ -523,7 +548,7 @@ const SleepReportScreen = ({ navigation, route }) => {
               <View style={sleepReportStyles.weekAverageContainer}>
                 <View style={sleepReportStyles.averageItem}>
                   <Text style={sleepReportStyles.averageLabel}>
-                    평균 수면 효율
+                    평균 수면 점수
                   </Text>
                   <Text style={sleepReportStyles.averageValue}>
                     {getWeeklyAverage().score}%
@@ -542,7 +567,7 @@ const SleepReportScreen = ({ navigation, route }) => {
             </View>
 
             <View style={sleepReportStyles.weekChartBox}>
-              <Text style={globalStyles.sectionLabel}>주간 수면 효율</Text>
+              <Text style={globalStyles.sectionLabel}>주간 수면 점수</Text>
               <WeekChart weekData={getWeekData()} />
             </View>
 

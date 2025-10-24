@@ -38,7 +38,6 @@ const CustomCalendar = ({
 
     onDateSelect(newDateString);
 
-    // 월이 바뀌면 currentMonth도 업데이트
     const newMonth = `${previousWeek.getFullYear()}-${String(
       previousWeek.getMonth() + 1
     ).padStart(2, "0")}-01`;
@@ -59,7 +58,6 @@ const CustomCalendar = ({
 
     onDateSelect(newDateString);
 
-    // 월이 바뀌면 currentMonth도 업데이트
     const newMonth = `${nextWeek.getFullYear()}-${String(
       nextWeek.getMonth() + 1
     ).padStart(2, "0")}-01`;
@@ -78,7 +76,6 @@ const CustomCalendar = ({
 
     onMonthChange(newMonth);
 
-    // 기존 선택된 일수를 새로운 월에 적용
     const selectedDateObj = new Date(selectedDate + "T00:00:00");
     const selectedDay = selectedDateObj.getDate();
     const newSelectedDate = `${year}-${month}-${String(selectedDay).padStart(
@@ -86,12 +83,10 @@ const CustomCalendar = ({
       "0"
     )}`;
 
-    // 해당 월에 그 날짜가 존재하는지 확인
     const newDate = new Date(newSelectedDate + "T00:00:00");
     if (newDate.getMonth() === date.getMonth()) {
       onDateSelect(newSelectedDate);
     } else {
-      // 해당 월에 날짜가 없으면 월의 마지막 날로 설정
       const lastDay = new Date(year, date.getMonth() + 1, 0).getDate();
       const lastDateOfMonth = `${year}-${month}-${String(lastDay).padStart(
         2,
@@ -111,7 +106,6 @@ const CustomCalendar = ({
 
     onMonthChange(newMonth);
 
-    // 기존 선택된 일수를 새로운 월에 적용
     const selectedDateObj = new Date(selectedDate + "T00:00:00");
     const selectedDay = selectedDateObj.getDate();
     const newSelectedDate = `${year}-${month}-${String(selectedDay).padStart(
@@ -119,12 +113,10 @@ const CustomCalendar = ({
       "0"
     )}`;
 
-    // 해당 월에 그 날짜가 존재하는지 확인
     const newDate = new Date(newSelectedDate + "T00:00:00");
     if (newDate.getMonth() === date.getMonth()) {
       onDateSelect(newSelectedDate);
     } else {
-      // 해당 월에 날짜가 없으면 월의 마지막 날로 설정
       const lastDay = new Date(year, date.getMonth() + 1, 0).getDate();
       const lastDateOfMonth = `${year}-${month}-${String(lastDay).padStart(
         2,
@@ -190,7 +182,6 @@ const CustomCalendar = ({
           isToday: isToday,
           isSelected: isSelected,
           hasSleepData: hasSleepData,
-          sleepScore: hasSleepData ? hasSleepData.score : null,
         });
 
         currentDate.setDate(currentDate.getDate() + 1);
@@ -234,7 +225,6 @@ const CustomCalendar = ({
         isToday: isToday,
         isSelected: isSelected,
         hasSleepData: hasSleepData,
-        sleepScore: hasSleepData ? hasSleepData.score : null,
       });
 
       currentDate.setDate(currentDate.getDate() + 1);
@@ -314,7 +304,9 @@ const CustomCalendar = ({
                     <View
                       style={[
                         styles.dayContainer,
-                        day.isSelected && styles.selectedDay,
+                        day.hasSleepData &&
+                          day.isSelected &&
+                          styles.selectedDay,
                         day.isToday && !day.isSelected && styles.todayDay,
                       ]}
                     >
@@ -324,25 +316,15 @@ const CustomCalendar = ({
                           !day.isCurrentMonth && styles.otherMonthText,
                           day.isSelected && styles.selectedDayText,
                           day.isToday && !day.isSelected && styles.todayText,
+                          day.hasSleepData &&
+                            !day.isSelected &&
+                            !day.isToday &&
+                            styles.hasSleepDataText, // 👈 이거만 추가
                         ]}
                       >
                         {day.date}
                       </Text>
-                      {day.hasSleepData && (
-                        <View
-                          style={[
-                            styles.sleepIndicator,
-                            {
-                              backgroundColor:
-                                day.sleepScore >= 85
-                                  ? "#10B981"
-                                  : day.sleepScore >= 70
-                                  ? "#F59E0B"
-                                  : "#EF4444",
-                            },
-                          ]}
-                        />
-                      )}
+                      {/* 👇 작은 점 제거 */}
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -354,7 +336,6 @@ const CustomCalendar = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
@@ -414,22 +395,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dayContainer: {
-    width: 32,
-    height: 33,
+    width: 34,
+    height: 34, // 👈 33 → 32로 변경 (정사각형)
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
   },
+  hasSleepDataText: {
+    color: "#4074D8",
+    fontWeight: "500",
+  },
   selectedDay: {
     borderRadius: 16,
-    backgroundColor: "#4074D8", // 꽉찬 동그라미
+    backgroundColor: "#4074D8",
+    width: 32,
+    height: 32,
   },
   todayDay: {
     borderWidth: 1,
     borderRadius: 16,
-    borderColor: "#4074D8", // 오늘 날짜는 얇은 테두리만
-    backgroundColor: "transparent", // 배경색 없음
+    borderColor: "#4074D8",
+    backgroundColor: "transparent",
+    width: 32,
+    height: 32,
   },
   dayText: {
     color: "#fff",
@@ -440,20 +429,12 @@ const styles = StyleSheet.create({
     color: "#4B5563",
   },
   selectedDayText: {
-    color: "#fff", // 선택된 날짜는 흰색 텍스트
+    color: "#fff",
     fontWeight: "600",
   },
   todayText: {
-    color: "#4074D8", // 오늘 날짜
+    color: "#4074D8",
     fontWeight: "500",
-  },
-  sleepIndicator: {
-    position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
 });
 
