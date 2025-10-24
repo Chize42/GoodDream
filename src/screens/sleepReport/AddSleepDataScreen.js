@@ -7,11 +7,11 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Platform } from "react-native";
+import { useAuth } from "../../contexts/AuthContext";
 
 // 스타일 import
 import {
@@ -25,12 +25,13 @@ import {
 import { saveSleepData, getSleepData } from "../../services/sleepService";
 
 const AddSleepDataScreen = ({ navigation, route }) => {
+  const { user } = useAuth();
+
   // route에서 전달받은 날짜를 초기값으로 사용
   const getInitialDate = () => {
     if (route?.params?.selectedDate) {
       return route.params.selectedDate;
     }
-    // 파라미터가 없으면 오늘 날짜 사용
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
       2,
@@ -41,7 +42,6 @@ const AddSleepDataScreen = ({ navigation, route }) => {
   const [selectedDate, setSelectedDate] = useState(getInitialDate());
   const [bedTime, setBedTime] = useState("23:00");
   const [wakeTime, setWakeTime] = useState("07:00");
-  const [sleepScore, setSleepScore] = useState("75");
   const [loading, setLoading] = useState(false);
 
   // DateTimePicker 상태
@@ -106,8 +106,8 @@ const AddSleepDataScreen = ({ navigation, route }) => {
     }
   };
 
-  // 수면 지속시간 계산
-  const calculateSleepDuration = () => {
+  // 👇 수면 시간(분) 계산 함수 추가
+  const calculateSleepDurationMinutes = () => {
     try {
       const [bedHour, bedMin] = bedTime.split(":").map(Number);
       const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
@@ -115,12 +115,20 @@ const AddSleepDataScreen = ({ navigation, route }) => {
       let bedTimeMinutes = bedHour * 60 + bedMin;
       let wakeTimeMinutes = wakeHour * 60 + wakeMin;
 
-      // 다음날 기상인 경우
       if (wakeTimeMinutes <= bedTimeMinutes) {
         wakeTimeMinutes += 24 * 60;
       }
 
-      const totalMinutes = wakeTimeMinutes - bedTimeMinutes;
+      return wakeTimeMinutes - bedTimeMinutes;
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  // 수면 지속시간 표시용
+  const calculateSleepDuration = () => {
+    try {
+      const totalMinutes = calculateSleepDurationMinutes();
 
       if (totalMinutes <= 0) {
         return "0시간 0분";
@@ -135,23 +143,53 @@ const AddSleepDataScreen = ({ navigation, route }) => {
     }
   };
 
+  // 👇 수면 점수 자동 계산 함수
+  const calculateSleepScore = (durationMinutes) => {
+    const sleepHours = durationMinutes / 60;
+    let score = 0;
+
+    // 7~9시간: 80~100점
+    if (sleepHours >= 7 && sleepHours <= 9) {
+      const deviation = Math.abs(sleepHours - 8);
+      score = Math.round(100 - deviation * 10);
+    }
+    // 6~7시간 또는 9~10시간: 60~80점
+    else if (sleepHours >= 6 && sleepHours <= 10) {
+      const deviation = sleepHours < 7 ? 7 - sleepHours : sleepHours - 9;
+      score = Math.round(80 - deviation * 20);
+    }
+    // 5~6시간 또는 10~11시간: 40~60점
+    else if (sleepHours >= 5 && sleepHours <= 11) {
+      const deviation = sleepHours < 6 ? 6 - sleepHours : sleepHours - 10;
+      score = Math.round(60 - deviation * 20);
+    }
+    // 4~5시간 또는 11~12시간: 20~40점
+    else if (sleepHours >= 4 && sleepHours <= 12) {
+      const deviation = sleepHours < 5 ? 5 - sleepHours : sleepHours - 11;
+      score = Math.round(40 - deviation * 20);
+    }
+    // 4시간 미만 또는 12시간 초과: 0~20점
+    else {
+      const deviation = sleepHours < 4 ? 4 - sleepHours : sleepHours - 12;
+      score = Math.max(0, Math.round(20 - deviation * 5));
+    }
+
+    return Math.min(100, Math.max(0, score));
+  };
+
   // 데이터 저장 함수
   const handleSaveSleepData = async () => {
     try {
-      // 유효성 검사
-      const score = parseInt(sleepScore);
-      if (isNaN(score) || score < 0 || score > 100) {
-        Alert.alert("오류", "수면 점수는 0~100 사이의 숫자여야 합니다.");
+      if (!user?.uid) {
+        Alert.alert("오류", "로그인이 필요합니다.");
         return;
       }
 
       setLoading(true);
 
-      // 기존 데이터가 있는지 확인
-      const existingData = await getSleepData(selectedDate);
+      const existingData = await getSleepData(user.uid, selectedDate);
 
       if (existingData) {
-        // 기존 데이터가 있는 경우 경고 메시지
         setLoading(false);
         Alert.alert(
           "(주의) 기존 데이터가 존재합니다",
@@ -168,7 +206,6 @@ const AddSleepDataScreen = ({ navigation, route }) => {
           ]
         );
       } else {
-        // 기존 데이터가 없는 경우 바로 저장
         await saveData();
       }
     } catch (error) {
@@ -181,26 +218,32 @@ const AddSleepDataScreen = ({ navigation, route }) => {
   // 실제 저장 함수
   const saveData = async () => {
     try {
+      if (!user?.uid) {
+        Alert.alert("오류", "로그인이 필요합니다.");
+        return;
+      }
+
       setLoading(true);
 
-      // 기본 수면 데이터만 저장 (수면 단계 정보 없음)
+      // 👇 수면 시간만 저장 (점수는 저장하지 않음)
+      const durationMinutes = calculateSleepDurationMinutes();
+
       const basicSleepData = {
         bedTime,
         wakeTime,
-        score: parseInt(sleepScore),
-        // 수면 단계 데이터는 포함하지 않음
-        isManualEntry: true, // 직접 입력 표시
+        duration: durationMinutes, // 👈 분 단위로 저장
+        // score는 저장하지 않음 - CircularProgress에서 자동 계산됨
+        isManualEntry: true,
+        source: "manual",
         lastModified: new Date().toISOString(),
       };
 
-      // Firebase에 저장
-      await saveSleepData(selectedDate, basicSleepData);
+      await saveSleepData(user.uid, selectedDate, basicSleepData);
 
       Alert.alert("저장 완료!", "수면 데이터가 성공적으로 저장되었습니다.", [
         {
           text: "확인",
           onPress: () => {
-            // 수면 리포트 화면으로 돌아가면서 저장된 날짜로 이동
             navigation.reset({
               index: 0,
               routes: [
@@ -220,6 +263,24 @@ const AddSleepDataScreen = ({ navigation, route }) => {
       setLoading(false);
     }
   };
+
+  if (!user) {
+    return (
+      <View style={globalStyles.container}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: colors.textMuted, fontSize: 16 }}>
+            로그인이 필요합니다
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={globalStyles.container}>
@@ -282,18 +343,20 @@ const AddSleepDataScreen = ({ navigation, route }) => {
             <Text style={styles.durationText}>{calculateSleepDuration()}</Text>
           </View>
 
-          {/* 수면 점수 */}
-          <View style={styles.inputSection}>
-            <Text style={styles.sectionTitle}>수면 점수 (0-100)</Text>
-            <TextInput
-              style={styles.scoreInput}
-              value={sleepScore}
-              onChangeText={setSleepScore}
-              placeholder="75"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="numeric"
-              maxLength={3}
-            />
+          {/* 👇 예상 수면 점수 표시 추가 */}
+          <View style={[styles.durationContainer, { marginTop: spacing.md }]}>
+            <Text style={styles.durationLabel}>예상 수면 점수</Text>
+            <Text style={styles.durationText}>
+              {calculateSleepScore(calculateSleepDurationMinutes())}점
+            </Text>
+            <Text
+              style={[
+                styles.durationLabel,
+                { marginTop: spacing.xs, fontSize: 12 },
+              ]}
+            >
+              수면 시간을 기준으로 자동 계산됩니다
+            </Text>
           </View>
 
           {/* 저장 버튼 */}
@@ -317,7 +380,7 @@ const AddSleepDataScreen = ({ navigation, route }) => {
         </View>
       </ScrollView>
 
-      {/* DateTimePicker들 - 기본 시스템 피커 사용 */}
+      {/* DateTimePicker들 */}
       {showDatePicker && (
         <DateTimePicker
           testID="datePicker"
@@ -389,15 +452,6 @@ const styles = {
   durationText: {
     ...typography.h3,
     color: colors.primary,
-  },
-  scoreInput: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    padding: spacing.lg,
-    ...typography.body,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.surface,
   },
 };
 

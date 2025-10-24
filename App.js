@@ -34,6 +34,7 @@ import AdvertisementInquiryScreen from "./src/screens/settings/AdvertisementInqu
 import CompletedInquiryScreen from "./src/screens/settings/CompletedInquiryScreen";
 import InquiryDetailScreen from "./src/screens/settings/InquiryDetailScreen";
 import NotificationScreen from "./src/screens/settings/NotificationScreen";
+import HealthConnectSettingsScreen from "./src/screens/settings/HealthConnectSettingsScreen";
 
 //관리자 모드 화면들 추가
 import AdminInquiryDashboard from "./src/screens/admin/AdminInquiryDashboard";
@@ -105,6 +106,10 @@ function MainStack() {
       <Stack.Screen name="알림" component={NotificationScreen} />
       <Stack.Screen name="서비스 이용 문의" component={ServiceInquiryScreen} />
       <Stack.Screen name="문의 내역" component={InquiryHistoryScreen} />
+      <Stack.Screen
+        name="HealthConnectSettings"
+        component={HealthConnectSettingsScreen}
+      />
       <Stack.Screen
         name="CompletedInquiryScreen"
         component={CompletedInquiryScreen}

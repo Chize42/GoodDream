@@ -2,6 +2,7 @@
   "expo": {
     "name": "수면 리포트",
     "slug": "sleep-tracker-app",
+    "icon": "/assets/appicon.png",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",

@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../contexts/AuthContext"; // ✅ 추가
+import { useAuth } from "../../contexts/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
@@ -23,12 +23,17 @@ const menuIcons = {
     "https://i.ibb.co/zhpSWYS0/material-symbols-person-outline-rounded.png",
   알림: "https://i.ibb.co/gZWMyPV5/Outline.png",
   "계정 연동": "https://i.ibb.co/2YH78Vcq/Outline.png",
+  "Health Connect": "https://i.ibb.co/2YH78Vcq/Outline.png", // 👈 추가
   고객센터: "https://i.ibb.co/JFySN1S6/stash-question.png",
 };
 
-const MenuItem = ({ iconUri, text, onPress }) => (
+const MenuItem = ({ iconUri, text, onPress, iconComponent }) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-    {iconUri && <Image source={{ uri: iconUri }} style={styles.menuIcon} />}
+    {iconComponent ? (
+      iconComponent
+    ) : iconUri ? (
+      <Image source={{ uri: iconUri }} style={styles.menuIcon} />
+    ) : null}
     <Text style={styles.menuText}>{text}</Text>
     <Image
       source={{ uri: "https://i.ibb.co/60229hwt/Arrow.png" }}
@@ -38,14 +43,13 @@ const MenuItem = ({ iconUri, text, onPress }) => (
 );
 
 export default function SettingsScreen({ navigation }) {
-  const { user, signOut } = useAuth(); // ✅ AuthContext에서 가져오기
+  const { user, signOut } = useAuth();
 
   const [username, setUsername] = useState("");
-  const [originalUsername, setOriginalUsername] = useState(""); // ✅ 원본 저장
+  const [originalUsername, setOriginalUsername] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ✅ 사용자 정보 로드
   useEffect(() => {
     loadUserData();
   }, [user]);
@@ -82,16 +86,16 @@ export default function SettingsScreen({ navigation }) {
           style: "destructive",
         },
       ]);
+    } else if (menu === "Health Connect") {
+      navigation.navigate("HealthConnectSettings"); // 👈 추가
     } else {
       navigation.navigate(menu);
     }
   };
 
-  // ✅ 로그아웃 처리
   const handleLogout = async () => {
     try {
       await signOut();
-      // ✅ AuthContext가 자동으로 로그인 화면으로 전환
       console.log("✅ 로그아웃 성공");
     } catch (error) {
       console.error("로그아웃 실패:", error);
@@ -103,7 +107,6 @@ export default function SettingsScreen({ navigation }) {
     setIsEditing(true);
   };
 
-  // ✅ 이름 저장 (Firebase 업데이트)
   const handleSaveUsername = async () => {
     try {
       if (!user?.uid) {
@@ -111,23 +114,20 @@ export default function SettingsScreen({ navigation }) {
         return;
       }
 
-      // 변경사항이 없으면 그냥 종료
       if (username.trim() === originalUsername) {
         setIsEditing(false);
         return;
       }
 
-      // 빈 이름 체크
       if (username.trim() === "") {
         Alert.alert("알림", "이름을 입력해주세요.");
-        setUsername(originalUsername); // 원래 이름으로 복구
+        setUsername(originalUsername);
         setIsEditing(false);
         return;
       }
 
       setLoading(true);
 
-      // ✅ Firebase에 업데이트
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, {
         username: username.trim(),
@@ -141,13 +141,12 @@ export default function SettingsScreen({ navigation }) {
     } catch (error) {
       console.error("이름 변경 실패:", error);
       Alert.alert("오류", "이름 변경에 실패했습니다.");
-      setUsername(originalUsername); // 실패 시 원래 이름으로 복구
+      setUsername(originalUsername);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ 로그인 안 된 경우
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
@@ -162,7 +161,6 @@ export default function SettingsScreen({ navigation }) {
     );
   }
 
-  // ✅ 로딩 중
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -218,7 +216,6 @@ export default function SettingsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* ✅ 이메일 표시 추가 (선택사항) */}
         <Text style={styles.emailText}>{user.email}</Text>
 
         <View style={styles.menuBox}>
@@ -237,6 +234,19 @@ export default function SettingsScreen({ navigation }) {
             iconUri={menuIcons["계정 연동"]}
             onPress={() => handlePress("계정 연동")}
           />
+          {/* 👇 Health Connect 메뉴 추가 */}
+          <MenuItem
+            text="Health Connect"
+            iconComponent={
+              <Ionicons
+                name="fitness-outline"
+                size={20}
+                color="#fff"
+                style={{ marginRight: 10 }}
+              />
+            }
+            onPress={() => handlePress("Health Connect")}
+          />
           <MenuItem
             text="고객센터"
             iconUri={menuIcons["고객센터"]}
@@ -252,6 +262,7 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
+// 스타일은 동일...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -265,7 +276,7 @@ const styles = StyleSheet.create({
   },
   profile: {
     alignItems: "center",
-    marginBottom: 10, // ✅ 이메일 공간 위해 줄임
+    marginBottom: 10,
   },
   avatar: {
     width: 80,
@@ -290,7 +301,6 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
     minWidth: 150,
   },
-  // ✅ 이메일 스타일 추가
   emailText: {
     textAlign: "center",
     fontSize: 14,

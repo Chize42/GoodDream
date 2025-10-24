@@ -9,11 +9,6 @@ import {
   doc,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import {
-  scheduleLocalNotifications,
-  cancelScheduleNotifications,
-  requestNotificationPermissions,
-} from "./localNotificationService";
 
 // 사용자별 스케줄 경로
 const getUserSchedulesCollection = (userId) => {
@@ -75,11 +70,14 @@ export const saveSleepSchedule = async (userId, scheduleData) => {
     );
     newSchedule.firebaseId = docRef.id;
 
-    if (newSchedule.enabled) {
-      await scheduleLocalNotifications(newSchedule);
-    }
+    // 🔥 이 부분만 삭제하거나 주석처리!
+    // if (newSchedule.enabled) {
+    //   await scheduleLocalNotifications(newSchedule);
+    // }
 
-    console.log("✅ 스케줄 저장 완료:", newSchedule.firebaseId);
+    console.log(
+      "✅ 스케줄 저장 완료 - Firebase Functions가 알림을 자동으로 관리합니다"
+    );
     return newSchedule;
   } catch (error) {
     console.error("수면 스케줄 저장 실패:", error);
@@ -87,7 +85,7 @@ export const saveSleepSchedule = async (userId, scheduleData) => {
   }
 };
 
-// ✅ export 키워드 확인!
+// getSleepSchedules는 그대로 둬도 됨! 변경 없음
 export const getSleepSchedules = async (userId) => {
   try {
     console.log("📖 스케줄 조회 시작 - userId:", userId);
@@ -235,17 +233,6 @@ export const toggleScheduleEnabled = async (userId, scheduleId) => {
     return updatedSchedule;
   } catch (error) {
     console.error("스케줄 토글 실패:", error);
-    throw error;
-  }
-};
-
-export const initializeNotificationPermissions = async () => {
-  try {
-    await requestNotificationPermissions();
-    console.log("알림 권한 설정 완료");
-    return true;
-  } catch (error) {
-    console.error("알림 권한 설정 실패:", error);
     throw error;
   }
 };

@@ -337,26 +337,6 @@ const SleepScheduleScreen = ({ navigation, route }) => {
         <Text style={styles.headerTitle}>수면 스케줄</Text>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
-            onPress={handleTestNotification}
-            style={{ marginRight: 8, padding: 4 }}
-          >
-            <Text
-              style={{ color: "#007AFF", fontSize: 10, textAlign: "center" }}
-            >
-              테스트
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={checkScheduledNotifications}
-            style={{ marginRight: 8, padding: 4 }}
-          >
-            <Text
-              style={{ color: "#007AFF", fontSize: 10, textAlign: "center" }}
-            >
-              확인
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
             style={styles.deleteButton}
             onPress={toggleDeleteMode}
           >

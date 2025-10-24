@@ -12,15 +12,18 @@ import {
   TouchableOpacity,
   View,
   RefreshControl,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import WeekChart from "../../components/WeekChart";
 import { useAuth } from "../../contexts/AuthContext";
-import EnhancedSyncButton from "../../components/EnhancedSyncButton";
+import { useSyncContext } from "../../contexts/SyncContext"; // 👈 추가
 
 const { width } = Dimensions.get("window");
 
 function HomeScreen({ navigation }: { navigation: any }) {
   const { user } = useAuth();
+  const { syncData, isSyncing } = useSyncContext(); // 👈 추가
   const [username, setUsername] = useState("사용자");
   const [loading, setLoading] = useState(true);
   const [weekData, setWeekData] = useState([]);
@@ -88,12 +91,28 @@ function HomeScreen({ navigation }: { navigation: any }) {
     }
   };
 
-  // Health Connect 동기화 완료 후 콜백
-  const handleSyncComplete = async (syncedData: any) => {
-    console.log("✅ Health Connect 동기화 완료, 화면 갱신");
+  // 👇 빠른 동기화 핸들러 추가
+  const handleQuickSync = async () => {
+    try {
+      const result = await syncData(7); // 최근 7일 동기화
 
-    // 주간 데이터 다시 로드
-    await fetchWeekSleepData();
+      if (result.success) {
+        Alert.alert(
+          "동기화 완료",
+          `${result.syncedCount}개의 데이터를 가져왔습니다.`
+        );
+        // 주간 데이터 다시 로드
+        await fetchWeekSleepData();
+      } else {
+        Alert.alert(
+          "동기화 실패",
+          result.error || "알 수 없는 오류가 발생했습니다."
+        );
+      }
+    } catch (error: any) {
+      console.error("동기화 오류:", error);
+      Alert.alert("오류", error.message || "동기화 중 오류가 발생했습니다.");
+    }
   };
 
   // 새로고침
@@ -112,14 +131,12 @@ function HomeScreen({ navigation }: { navigation: any }) {
           return;
         }
 
-        // Firestore에서 사용자 정보 가져오기
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setUsername(userData.username || "사용자");
         }
 
-        // 주간 수면 데이터 가져오기
         await fetchWeekSleepData();
       } catch (error) {
         console.error("사용자 정보를 가져오는 중 오류:", error);
@@ -133,7 +150,6 @@ function HomeScreen({ navigation }: { navigation: any }) {
     loadUserData();
   }, [user]);
 
-  // 현재 날짜 포맷팅
   const getCurrentDate = () => {
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = {
@@ -193,35 +209,43 @@ function HomeScreen({ navigation }: { navigation: any }) {
           </View>
         </View>
 
-        {/* ⭐ Health Connect 동기화 버튼 추가 */}
-        <View style={styles.syncButtonContainer}>
-          <EnhancedSyncButton
-            onSyncComplete={handleSyncComplete}
-            style={styles.syncButton}
-          />
-        </View>
+        {/* 👇 기존 동기화 버튼 제거 */}
 
         <View style={styles.weekly}>
           <Text style={styles.weeklyText}>weekly report</Text>
-          <TouchableOpacity
-            style={styles.seeMoreButton}
-            onPress={() => {
-              const today = new Date().toISOString().split("T")[0];
-              navigation.navigate("SleepReport", { initialDate: today });
-            }}
-          >
-            <Text style={styles.seeMoreText}>더보기</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            {/* 👇 동기화 아이콘 버튼 추가 */}
+            <TouchableOpacity
+              onPress={handleQuickSync}
+              disabled={isSyncing}
+              style={styles.syncIconButton}
+            >
+              {isSyncing ? (
+                <ActivityIndicator size="small" color="#4074D8" />
+              ) : (
+                <Ionicons name="sync-outline" size={18} color="#4074D8" />
+              )}
+            </TouchableOpacity>
+
+            {/* 더보기 버튼 */}
+            <TouchableOpacity
+              style={styles.seeMoreButton}
+              onPress={() => {
+                const today = new Date().toISOString().split("T")[0];
+                navigation.navigate("SleepReport", { initialDate: today });
+              }}
+            >
+              <Text style={styles.seeMoreText}>더보기</Text>
+              <Ionicons name="chevron-forward" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.chartBox}>
           <WeekChart weekData={weekData} />
         </View>
 
-        {/* 알람 + 사운드/버블 */}
         <View style={styles.cardRow}>
-          {/* 왼쪽 알람 큰 카드 */}
           <TouchableOpacity
             style={[styles.bigCard, styles.purple]}
             onPress={() => navigation.navigate("SleepSchedule")}
@@ -234,7 +258,6 @@ function HomeScreen({ navigation }: { navigation: any }) {
             <Text style={styles.cardSubtitle}>SCHEDULE</Text>
           </TouchableOpacity>
 
-          {/* 오른쪽 (사운드 + 버블) */}
           <View style={styles.smallCardColumn}>
             <TouchableOpacity
               style={[styles.smallCard, styles.orange]}
@@ -357,14 +380,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
   },
-  // ⭐ 동기화 버튼 컨테이너 스타일
-  syncButtonContainer: {
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  syncButton: {
-    width: "100%",
-  },
   weekly: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -374,6 +389,21 @@ const styles = StyleSheet.create({
   weeklyText: {
     fontSize: 18,
     color: "white",
+  },
+  // 👇 헤더 액션 컨테이너 추가
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  // 👇 동기화 아이콘 버튼 스타일 추가
+  syncIconButton: {
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 14,
+    backgroundColor: "rgba(64, 116, 216, 0.15)",
   },
   seeMoreButton: {
     flexDirection: "row",

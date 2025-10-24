@@ -16,24 +16,24 @@ export const useSyncContext = () => {
 };
 
 export const SyncProvider = ({ children }) => {
-  const { currentUser } = useAuth();
+  const { user } = useAuth(); // 👈 user (currentUser 아님)
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [syncError, setSyncError] = useState(null);
   const [isHealthConnectAvailable, setIsHealthConnectAvailable] =
     useState(false);
 
-  // 마지막 동기화 시간 불러오기
   useEffect(() => {
     loadLastSyncTime();
     checkHealthConnectAvailability();
-  }, [currentUser]);
+  }, [user]); // 👈 user
 
   const loadLastSyncTime = async () => {
     try {
-      if (currentUser?.uid) {
+      if (user?.uid) {
+        // 👈 user
         const lastSync = await AsyncStorage.getItem(
-          `lastSync_${currentUser.uid}`
+          `lastSync_${user.uid}` // 👈 user
         );
         if (lastSync) {
           setLastSyncTime(new Date(lastSync));
@@ -49,7 +49,12 @@ export const SyncProvider = ({ children }) => {
   };
 
   const syncData = async (days = 7) => {
-    if (!currentUser?.uid) {
+    console.log("🔵 syncData 호출됨, days:", days);
+    console.log("👤 현재 사용자:", user?.uid);
+
+    if (!user?.uid) {
+      // 👈 user
+      console.error("❌ 사용자 정보 없음");
       setSyncError("로그인이 필요합니다");
       return { success: false, error: "로그인이 필요합니다" };
     }
@@ -63,22 +68,27 @@ export const SyncProvider = ({ children }) => {
     setSyncError(null);
 
     try {
-      const result = await syncDateRange(currentUser.uid, days);
+      console.log("🔄 동기화 시작 - User ID:", user.uid, "Days:", days); // 👈 user
+      const result = await syncDateRange(user.uid, days); // 👈 user
+
+      console.log("📊 동기화 결과:", result);
 
       if (result.success) {
         const now = new Date();
         setLastSyncTime(now);
         await AsyncStorage.setItem(
-          `lastSync_${currentUser.uid}`,
+          `lastSync_${user.uid}`, // 👈 user
           now.toISOString()
         );
+        console.log("✅ 동기화 완료:", result);
         return result;
       } else {
+        console.error("❌ 동기화 실패:", result.error);
         setSyncError(result.error);
         return result;
       }
     } catch (error) {
-      console.error("동기화 오류:", error);
+      console.error("❌ 동기화 오류:", error);
       setSyncError(error.message);
       return { success: false, error: error.message };
     } finally {
@@ -86,16 +96,13 @@ export const SyncProvider = ({ children }) => {
     }
   };
 
-  // 자동 동기화 (선택사항)
   const autoSync = async () => {
     if (!lastSyncTime) {
-      // 첫 동기화
       return await syncData(30);
     }
 
     const hoursSinceLastSync = (new Date() - lastSyncTime) / (1000 * 60 * 60);
 
-    // 24시간 이상 지났으면 자동 동기화
     if (hoursSinceLastSync >= 24) {
       console.log("🔄 24시간 경과, 자동 동기화 시작");
       return await syncData(7);
@@ -106,8 +113,9 @@ export const SyncProvider = ({ children }) => {
 
   const clearSyncData = async () => {
     try {
-      if (currentUser?.uid) {
-        await AsyncStorage.removeItem(`lastSync_${currentUser.uid}`);
+      if (user?.uid) {
+        // 👈 user
+        await AsyncStorage.removeItem(`lastSync_${user.uid}`); // 👈 user
       }
       setLastSyncTime(null);
       setSyncError(null);
