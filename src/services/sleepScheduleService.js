@@ -7,8 +7,13 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import {
+  subscribeToSchedule,
+  unsubscribeFromSchedule,
+} from "./firebaseMessagingService";
 
 // 사용자별 스케줄 경로
 const getUserSchedulesCollection = (userId) => {
@@ -16,7 +21,7 @@ const getUserSchedulesCollection = (userId) => {
   return collection(db, "users", userId, "sleepSchedules");
 };
 
-// ✅ export 키워드 확인!
+// 스케줄 저장 함수
 export const saveSleepSchedule = async (userId, scheduleData) => {
   try {
     console.log("📝 스케줄 저장 시작 - userId:", userId);
@@ -43,8 +48,8 @@ export const saveSleepSchedule = async (userId, scheduleData) => {
       days: daysArray,
       id: scheduleData.id || Date.now().toString(),
       userId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       enabled: scheduleData.enabled !== false,
       notifications: scheduleData.notifications || {
         bedtime: {
@@ -70,10 +75,10 @@ export const saveSleepSchedule = async (userId, scheduleData) => {
     );
     newSchedule.firebaseId = docRef.id;
 
-    // 🔥 이 부분만 삭제하거나 주석처리!
-    // if (newSchedule.enabled) {
-    //   await scheduleLocalNotifications(newSchedule);
-    // }
+    // FCM 토픽 구독 (Firebase에서 알림을 보낼 때 사용)
+    if (newSchedule.enabled) {
+      await subscribeToSchedule(newSchedule.id);
+    }
 
     console.log(
       "✅ 스케줄 저장 완료 - Firebase Functions가 알림을 자동으로 관리합니다"
@@ -85,7 +90,7 @@ export const saveSleepSchedule = async (userId, scheduleData) => {
   }
 };
 
-// getSleepSchedules는 그대로 둬도 됨! 변경 없음
+// 스케줄 목록 조회 함수
 export const getSleepSchedules = async (userId) => {
   try {
     console.log("📖 스케줄 조회 시작 - userId:", userId);
@@ -112,6 +117,7 @@ export const getSleepSchedules = async (userId) => {
   }
 };
 
+// 스케줄 업데이트 함수
 export const updateSleepSchedule = async (userId, scheduleId, updateData) => {
   try {
     if (!userId) throw new Error("사용자 ID가 필요합니다");
@@ -125,7 +131,7 @@ export const updateSleepSchedule = async (userId, scheduleId, updateData) => {
 
     const updatedData = {
       ...updateData,
-      updatedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
     };
 
     const scheduleRef = doc(
@@ -138,7 +144,15 @@ export const updateSleepSchedule = async (userId, scheduleId, updateData) => {
     await updateDoc(scheduleRef, updatedData);
 
     const updatedSchedule = { ...targetSchedule, ...updatedData };
-    await scheduleLocalNotifications(updatedSchedule);
+
+    // FCM 토픽 구독 상태 업데이트
+    if (updateData.hasOwnProperty("enabled")) {
+      if (updateData.enabled) {
+        await subscribeToSchedule(scheduleId);
+      } else {
+        await unsubscribeFromSchedule(scheduleId);
+      }
+    }
 
     return updatedSchedule;
   } catch (error) {
@@ -147,6 +161,7 @@ export const updateSleepSchedule = async (userId, scheduleId, updateData) => {
   }
 };
 
+// 스케줄 삭제 함수
 export const deleteSleepSchedule = async (userId, scheduleId) => {
   try {
     if (!userId) throw new Error("사용자 ID가 필요합니다");
@@ -158,7 +173,8 @@ export const deleteSleepSchedule = async (userId, scheduleId) => {
       throw new Error("삭제할 스케줄을 찾을 수 없습니다");
     }
 
-    await cancelScheduleNotifications(scheduleId);
+    // FCM 토픽 구독 해제
+    await unsubscribeFromSchedule(scheduleId);
 
     if (targetSchedule.firebaseId) {
       const scheduleRef = doc(
@@ -178,6 +194,7 @@ export const deleteSleepSchedule = async (userId, scheduleId) => {
   }
 };
 
+// 여러 스케줄 일괄 삭제
 export const deleteSleepSchedules = async (userId, scheduleIds) => {
   try {
     if (!userId) throw new Error("사용자 ID가 필요합니다");
@@ -189,8 +206,9 @@ export const deleteSleepSchedules = async (userId, scheduleIds) => {
       throw new Error("삭제할 스케줄을 찾을 수 없습니다");
     }
 
+    // FCM 토픽 구독 해제
     for (const scheduleId of scheduleIds) {
-      await cancelScheduleNotifications(scheduleId);
+      await unsubscribeFromSchedule(scheduleId);
     }
 
     const deletePromises = targetSchedules
@@ -214,6 +232,7 @@ export const deleteSleepSchedules = async (userId, scheduleIds) => {
   }
 };
 
+// 스케줄 활성화/비활성화 토글
 export const toggleScheduleEnabled = async (userId, scheduleId) => {
   try {
     if (!userId) throw new Error("사용자 ID가 필요합니다");
@@ -237,6 +256,7 @@ export const toggleScheduleEnabled = async (userId, scheduleId) => {
   }
 };
 
+// 특정 요일의 활성화된 스케줄 조회
 export const getActiveSchedulesForDay = async (userId, dayOfWeek) => {
   try {
     if (!userId) throw new Error("사용자 ID가 필요합니다");
