@@ -346,17 +346,6 @@ const SleepScheduleScreen = ({ navigation, route }) => {
               color={isDeleteMode ? "#007AFF" : "#fff"}
             />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={async () => {
-              const result = await testFCM();
-              if (result) {
-                Alert.alert("FCM 정보", `토픽: ${result.topic}`);
-              }
-            }}
-          >
-            <Text style={styles.buttonText}>FCM 테스트</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
