@@ -104,7 +104,25 @@ export const subscribeToSchedule = async (scheduleId) => {
     return false;
   }
 };
+// 토픽 구독 확인
+export const checkTopicSubscription = async (scheduleId) => {
+  try {
+    const fcmToken = await messaging().getToken();
+    console.log(`FCM 토큰: ${fcmToken}`);
 
+    // 구독 토픽 로그 출력
+    console.log(`구독 중인 토픽: schedule_${scheduleId}`);
+
+    // 테스트용: 다시 구독
+    await messaging().subscribeToTopic(`schedule_${scheduleId}`);
+    console.log(`토픽 재구독 완료: schedule_${scheduleId}`);
+
+    return true;
+  } catch (error) {
+    console.error("토픽 구독 확인 실패:", error);
+    return false;
+  }
+};
 // 토픽 구독 해제
 export const unsubscribeFromSchedule = async (scheduleId) => {
   try {
@@ -243,5 +261,23 @@ export const checkNotificationStatus = async () => {
       permissionGranted: false,
       error: error.message,
     };
+  }
+};
+
+// 테스트 기능 추가
+export const testFCM = async () => {
+  try {
+    const token = await messaging().getToken();
+    console.log("FCM 토큰:", token);
+
+    const scheduleId = "1760792670266"; // 로그에서 확인한 실제 스케줄 ID
+
+    await messaging().subscribeToTopic(`schedule_${scheduleId}`);
+    console.log(`토픽 구독 완료: schedule_${scheduleId}`);
+
+    return { token, topic: `schedule_${scheduleId}` };
+  } catch (error) {
+    console.error("FCM 테스트 오류:", error);
+    return null;
   }
 };
