@@ -1,6 +1,6 @@
 // src/screens/RegisterScreen.tsx
 
-import React from "react";
+import React, { useRef, useEffect } from "react"; // <-- useRef, useEffect 추가
 import {
   Dimensions,
   Image,
@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Animated, // <-- Animated 추가
 } from "react-native";
 
 const owlImage = require("../../../assets/reowl.png");
@@ -16,11 +17,46 @@ const owlImage = require("../../../assets/reowl.png");
 const { height } = Dimensions.get("window");
 
 const RegisterScreen = ({ navigation }: { navigation: any }) => {
+  // 애니메이션 값을 저장하기 위해 useRef 사용
+  const floatAnim = useRef(new Animated.Value(0)).current; // <-- 추가
+
+  // 컴포넌트가 마운트될 때 애니메이션 시작
+  useEffect(() => {
+    // <-- 추가 (전체)
+    Animated.loop(
+      // 애니메이션을 무한 반복합니다.
+      Animated.sequence([
+        // 두 개의 애니메이션을 순차적으로 실행합니다.
+        Animated.timing(floatAnim, {
+          toValue: -15, // 15px 위로 이동
+          duration: 1500, // 1.5초 동안
+          useNativeDriver: true, // 네이티브 드라이버 사용 (성능 향상)
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0, // 원래 위치로 (아래로 15px)
+          duration: 1500, // 1.5초 동안
+          useNativeDriver: true,
+        }),
+      ])
+    ).start(); // 애니메이션 시작
+  }, [floatAnim]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.imageContainer}>
-          <Image source={owlImage} style={styles.image} />
+          {/* Image를 Animated.Image로 변경 */}
+          <Animated.Image // <-- 변경
+            source={owlImage}
+            style={[
+              // <-- 변경 (배열로 감싸기)
+              styles.image,
+              {
+                // 애니메이션 값 적용
+                transform: [{ translateY: floatAnim }], // <-- 추가
+              },
+            ]}
+          />
         </View>
 
         <Text style={styles.title}>We are what we do</Text>
@@ -63,8 +99,8 @@ const styles = StyleSheet.create({
     marginBottom: height < 600 ? 20 : 30,
   },
   image: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
     resizeMode: "contain",
   },
   title: {

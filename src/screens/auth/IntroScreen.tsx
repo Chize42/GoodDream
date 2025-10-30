@@ -8,6 +8,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  // Easing을 추가하여 부드러운 움직임을 만듭니다.
+  Easing,
 } from "react-native";
 
 const owlImage = require("../../../assets/owl.png");
@@ -120,6 +122,35 @@ function StarBackground({ count = 40 }: StarBackgroundProps) {
    메인 Intro 화면
 ============================ */
 function IntroScreen({ navigation }: { navigation: any }) {
+  // 🦉 둥둥 떠다니는 효과를 위한 애니메이션 값
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // 부드러운 위아래 움직임 (Floating) 애니메이션 정의
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: 1,
+          duration: 3500, // 3.5초에 걸쳐 위로 이동
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease), // 부드러운 가속/감속
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 3500, // 3.5초에 걸쳐 다시 제자리로 이동
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        }),
+      ])
+    );
+
+    // 애니메이션 시작
+    animation.start();
+
+    // 클린업 함수
+    return () => animation.stop();
+  }, [floatAnim]);
+
   const handleGetStarted = () => {
     try {
       navigation.navigate("Register");
@@ -142,7 +173,24 @@ function IntroScreen({ navigation }: { navigation: any }) {
         </Text>
 
         <View style={styles.introImageContainer}>
-          <Image source={owlImage} style={styles.introImage} />
+          {/* Image를 Animated.Image로 변경하고 transform 스타일을 적용합니다. */}
+          <Animated.Image
+            source={owlImage}
+            style={[
+              styles.introImage,
+              {
+                transform: [
+                  {
+                    // floatAnim 값(0~1)에 따라 Y축 이동을 0에서 -15 픽셀로 변환
+                    translateY: floatAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -15],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
         </View>
 
         <TouchableOpacity
@@ -194,8 +242,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   introImage: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
     resizeMode: "contain",
   },
   introBtn: {
