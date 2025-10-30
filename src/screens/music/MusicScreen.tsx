@@ -176,8 +176,8 @@ const BottomPlayer = ({
 );
 
 export default function MusicScreen({ navigation }: { navigation: any }) {
-  // Context에서 상태와 함수를 가져와 사용합니다.
-  const { currentSound, isPlaying, playSound, togglePlayPause } =
+  // [수정] 1. playSound 대신 playSingleSound를 가져옵니다.
+  const { currentSound, isPlaying, playSingleSound, togglePlayPause } =
     useMusicContext();
 
   const [activeCategory, setActiveCategory] = useState("전체");
@@ -188,12 +188,17 @@ export default function MusicScreen({ navigation }: { navigation: any }) {
       : soundData.filter((item) => item.category === activeCategory);
 
   const handlePlaySound = (item: SoundItem) => {
-    // Context의 playSound 함수를 호출합니다.
-    playSound(item);
+    // [수정] 2. playSound(item) 대신 playSingleSound(item)를 호출합니다.
+    // 이것이 큐를 비우고 단일 곡 재생 모드로 만듭니다.
+    playSingleSound(item);
   };
 
   const handlePlayerPress = () => {
     if (currentSound) {
+      // "MusicPlayer" (MusicPlayerScreen)로 이동합니다.
+      // MusicPlayerScreen의 useEffect는 이 params를 받지만,
+      // 이미 currentSound가 재생 중이므로 playSingleSound를 다시 호출하지 않습니다.
+      // 큐는 이미 handlePlaySound에서 비워진 상태입니다.
       navigation.navigate("MusicPlayer", { ...currentSound });
     }
   };
@@ -283,6 +288,7 @@ export default function MusicScreen({ navigation }: { navigation: any }) {
   );
 }
 
+// [수정 없음] 스타일(styles) 코드는 기존과 동일합니다.
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

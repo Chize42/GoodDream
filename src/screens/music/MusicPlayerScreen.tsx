@@ -13,6 +13,8 @@ import {
   TouchableOpacity,
   View,
   ToastAndroid,
+  Modal,
+  FlatList,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useMusicContext } from "../../contexts/MusicContext";
@@ -26,9 +28,12 @@ export default function MusicPlayerScreen({ navigation, route }: { navigation: a
     isPlaying,
     currentTime,
     duration,
-    playSound,
+    playSingleSound,
     togglePlayPause,
     seekToTime,
+    playbackQueue,
+    queueIndex,
+    playTrackFromQueue,
   } = useMusicContext();
 
   const { playlists, createPlaylist, addTrackToPlaylist, isFavorite } = usePlaylistContext();
@@ -37,16 +42,28 @@ export default function MusicPlayerScreen({ navigation, route }: { navigation: a
   const [isCreatingDrawer, setIsCreatingDrawer] = useState(false);
   const [newDrawerName, setNewDrawerName] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isPlaylistModalVisible, setIsPlaylistModalVisible] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
-
   const isCurrentlyFavorite = currentSound ? isFavorite(currentSound.id) : false;
 
+  // [수정] 📍📍📍 여기가 버그의 원인이었습니다! 📍📍📍
   useEffect(() => {
-    if (route.params?.audio && (!currentSound || route.params.audio !== currentSound.audio)) {
-      playSound(route.params);
+    // 기존 로직: if (route.params?.audio && (!currentSound || route.params.audio !== currentSound.audio)) {
+    // 
+    // [수정된 로직]
+    // 이 화면으로 이동했는데(route.params가 있는데),
+    // 마침 재생 중인 곡이 아무것도 없다면(e.g., 앱 재시작)
+    // route.params의 곡을 재생합니다.
+    if (route.params?.audio && !currentSound) {
+      playSingleSound(route.params);
     }
-  }, [route.params, currentSound, playSound]);
+    //
+    // 이제 `currentSound`가 모달에서 바뀌더라도
+    // `!currentSound` 조건이 false가 되므로, 
+    // 이 `useEffect`는 다시는 `playSingleSound`를 호출하지 않습니다.
+    //
+  }, [route.params, currentSound, playSingleSound]);
 
   const showToast = (message: string) => {
     if (Platform.OS === 'android') {
@@ -67,6 +84,13 @@ export default function MusicPlayerScreen({ navigation, route }: { navigation: a
       setShowFavoritePopup(false);
       setIsCreatingDrawer(false);
     });
+  };
+
+  const openPlaylistModal = () => setIsPlaylistModalVisible(true);
+  const closePlaylistModal = () => setIsPlaylistModalVisible(false);
+
+  const handleSelectTrack = (index: number) => {
+    playTrackFromQueue(index);
   };
 
   const handleConfirmCreateDrawer = () => {
@@ -130,7 +154,10 @@ export default function MusicPlayerScreen({ navigation, route }: { navigation: a
             <Text style={styles.trackTitle}>{currentSound.title}</Text>
             <Text style={styles.trackArtist}>{currentSound.subtitle}</Text>
           </View>
+          
           <View style={styles.controlsContainer}>
+              <View style={{ width: 30 }} /> 
+
               <TouchableOpacity onPress={() => seekToTime(Math.max(0, currentTime - 30))}>
                   <MaterialIcons name="replay-30" size={30} color="#ffffff" />
               </TouchableOpacity>
@@ -140,12 +167,23 @@ export default function MusicPlayerScreen({ navigation, route }: { navigation: a
               <TouchableOpacity onPress={() => seekToTime(Math.min(duration, currentTime + 30))}>
                   <MaterialIcons name="forward-30" size={30} color="#ffffff" />
               </TouchableOpacity>
+
+              {playbackQueue.length > 0 ? (
+                <TouchableOpacity onPress={openPlaylistModal}>
+                    <Ionicons name="list" size={30} color="#ffffff" />
+                </TouchableOpacity>
+              ) : (
+                <View style={{ width: 30 }} /> 
+              )}
           </View>
+          
           <View style={styles.progressContainer}>
             <View style={styles.progressBar} {...panResponder.panHandlers}><View style={[styles.progressFill, { width: `${progress}%` }]} /></View>
             <View style={styles.timeContainer}><Text style={styles.currentTime}>{formatTime(currentTime)}</Text><Text style={styles.totalTime}>{formatTime(duration)}</Text></View>
           </View>
         </View>
+
+        {/* --- 기존 즐겨찾기 팝업 (수정 없음) --- */}
         {showFavoritePopup && (
           <TouchableOpacity style={styles.popupOverlay} activeOpacity={1} onPress={closePopup}>
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: 'flex-end' }}>
@@ -184,6 +222,70 @@ export default function MusicPlayerScreen({ navigation, route }: { navigation: a
             </KeyboardAvoidingView>
           </TouchableOpacity>
         )}
+
+        {/* --- 재생 목록 모달 (수정 없음) --- */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isPlaylistModalVisible}
+          onRequestClose={closePlaylistModal}
+        >
+          <TouchableOpacity 
+            style={styles.popupOverlay} 
+            activeOpacity={1} 
+            onPress={closePlaylistModal}
+          >
+            <View 
+              style={[styles.popupContainer, { maxHeight: screenHeight * 0.6 }]}
+              onStartShouldSetResponder={() => true} 
+            >
+              <View style={styles.popupHeader}>
+                <Text style={styles.popupTitle}>재생 목록</Text>
+                <TouchableOpacity onPress={closePlaylistModal}>
+                  <Ionicons name="close" size={24} color="#9ca3af" />
+                </TouchableOpacity>
+              </View>
+
+              <FlatList
+                data={playbackQueue}
+                keyExtractor={(item, index) => `${item.id}-${index}`}
+                renderItem={({ item, index }) => {
+                  const isCurrentTrack = index === queueIndex;
+                  return (
+                    <TouchableOpacity 
+                      style={styles.popupItem}
+                      onPress={() => handleSelectTrack(index)}
+                    >
+                      <Image source={item.image} style={styles.popupItemThumbnail} />
+                      <View style={{ flex: 1 }}>
+                        <Text 
+                          style={[
+                            styles.popupItemText, 
+                            isCurrentTrack && styles.currentTrackText
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.title}
+                        </Text>
+                        <Text 
+                          style={[
+                            styles.playlistItemSubtitle,
+                            isCurrentTrack && styles.currentTrackText
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.subtitle}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
         {toastMessage && (
           <View style={styles.toastContainer}>
             <Text style={styles.toastText}>{toastMessage}</Text>
@@ -193,6 +295,8 @@ export default function MusicPlayerScreen({ navigation, route }: { navigation: a
   );
 }
 
+// --- 스타일 (styles) ---
+// (수정 없음, 기존과 동일)
 const styles = StyleSheet.create({
     safeArea: { 
       flex: 1, 
@@ -255,8 +359,8 @@ const styles = StyleSheet.create({
     controlsContainer: { 
       flexDirection: "row", 
       alignItems: "center", 
-      justifyContent: 'space-around', 
-      width: '80%', 
+      justifyContent: 'space-between',
+      width: '100%',
       marginBottom: 40 
     },
     playButton: { 
@@ -390,5 +494,13 @@ const styles = StyleSheet.create({
     },
     toastText: { 
       color: '#fff' 
+    },
+    playlistItemSubtitle: {
+      fontSize: 14,
+      color: '#9ca3af',
+    },
+    currentTrackText: {
+      color: '#007aff', 
+      fontWeight: 'bold',
     },
 });

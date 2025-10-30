@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Audio } from "expo-av";
 
-// SoundItem 타입 정의
+// SoundItem 타입 정의 (기존과 동일)
 interface SoundItem {
   id: string;
   title: string;
@@ -17,15 +17,20 @@ interface SoundItem {
   audio: any;
 }
 
+// [수정] 1. 인터페이스 변경
+// playSound -> playSingleSound로 변경
 interface MusicContextType {
   currentSound: SoundItem | null;
   isPlaying: boolean;
   currentTime: number;
   duration: number;
-  playSound: (item: SoundItem) => Promise<void>;
+  playSingleSound: (item: SoundItem) => Promise<void>; // playSound가 이걸로 바뀜
   togglePlayPause: () => Promise<void>;
   seekToTime: (timeInSeconds: number) => Promise<void>;
   playPlaylist: (tracks: SoundItem[]) => void;
+  playbackQueue: SoundItem[];
+  queueIndex: number;
+  playTrackFromQueue: (index: number) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -48,19 +53,10 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
       shouldDuckAndroid: true,
     });
   }, []);
-  
-  const playNextInQueue = () => {
-    if (queueIndex < playbackQueue.length - 1) {
-      const nextIndex = queueIndex + 1;
-      setQueueIndex(nextIndex);
-      playSound(playbackQueue[nextIndex]);
-    } else {
-      setPlaybackQueue([]);
-      setQueueIndex(0);
-    }
-  };
 
-  const playSound = async (item: SoundItem) => {
+  // [수정] 2. 기존 playSound 함수의 이름을 _internalPlaySound로 변경
+  // 이것은 Context 내부에서만 사용하는 핵심 재생 함수입니다.
+  const _internalPlaySound = async (item: SoundItem) => {
     try {
       if (soundInstance) {
         await soundInstance.unloadAsync();
@@ -87,7 +83,18 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
     } catch (error) {
-        console.error("Error in playSound:", error);
+        console.error("Error in _internalPlaySound:", error);
+    }
+  };
+  
+  const playNextInQueue = () => {
+    if (queueIndex < playbackQueue.length - 1) {
+      const nextIndex = queueIndex + 1;
+      setQueueIndex(nextIndex);
+      _internalPlaySound(playbackQueue[nextIndex]); // _internalPlaySound 호출
+    } else {
+      setPlaybackQueue([]);
+      setQueueIndex(0);
     }
   };
   
@@ -95,7 +102,22 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
       if (tracks.length === 0) return;
       setPlaybackQueue(tracks);
       setQueueIndex(0);
-      playSound(tracks[0]);
+      _internalPlaySound(tracks[0]); // _internalPlaySound 호출
+  };
+
+  const playTrackFromQueue = (index: number) => {
+    if (index >= 0 && index < playbackQueue.length) {
+      setQueueIndex(index);
+      _internalPlaySound(playbackQueue[index]); // _internalPlaySound 호출
+    }
+  };
+
+  // [추가] 3. "단일 곡 재생" 함수 (가장 중요!)
+  // 이 함수는 밖(MusicPlayerScreen)에서 호출되며, 재생 목록을 비웁니다.
+  const playSingleSound = async (item: SoundItem) => {
+    setPlaybackQueue([]); // <-- 핵심: 플레이리스트를 비웁니다.
+    setQueueIndex(0);
+    await _internalPlaySound(item); // 내부 재생 함수 호출
   };
 
   const togglePlayPause = async () => {
@@ -110,15 +132,19 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
     if (soundInstance) await soundInstance.setPositionAsync(timeInSeconds * 1000);
   };
 
+  // [수정] 4. value 객체 변경 (playSound 대신 playSingleSound)
   const value = {
     currentSound,
     isPlaying,
     currentTime,
     duration,
-    playSound,
+    playSingleSound, // playSound가 이걸로 바뀜
     togglePlayPause,
     seekToTime,
     playPlaylist,
+    playbackQueue,
+    queueIndex,
+    playTrackFromQueue,
   };
 
   return (
