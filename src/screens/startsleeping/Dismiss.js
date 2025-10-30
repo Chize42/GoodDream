@@ -17,7 +17,7 @@ const Dismiss  = ({ navigation }) => {
         <View style={styles.content}>
           {/* 깨어있는 부엉이 이미지 */}
           <Image
-            source={{ uri: 'https://i.ibb.co/PzPQTJwJ/wakeup-Owl.png' }}
+            source={require("../../../assets/images/wakeup-Owl.png")}
             style={styles.owlImage}
           />
 
@@ -28,7 +28,7 @@ const Dismiss  = ({ navigation }) => {
           <View style={styles.statsCard}>
             <View style={styles.statItem}>
               <View style={styles.statHeader}>
-                <Image source={{ uri: 'https://i.imgur.com/8e5P5nN.png' }} style={styles.statIcon} />
+                <Image source={require("../../../assets/images/sleep.png")} style={styles.statIcon} />
                 <Text style={styles.statLabel}>Sleep</Text>
               </View>
               <Text style={styles.statValue}>06h 41m</Text>

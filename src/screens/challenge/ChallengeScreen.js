@@ -131,7 +131,7 @@ export default function ChallengeScreen({ navigation }) {
       </View>
       <View style={styles.content}>
         <Image
-          source={{ uri: "https://i.ibb.co/JWnPXqxG/owl.png" }}
+          source={require("../../../assets/images/owl.png")}
           style={styles.emojiContainer}
         />
 
