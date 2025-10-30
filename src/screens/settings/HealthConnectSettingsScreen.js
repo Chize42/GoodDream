@@ -18,7 +18,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useSyncContext } from "../../contexts/SyncContext";
 import {
   initializeHealthConnect,
-  requestHealthConnectPermissions,
+  checkHealthConnectPermissions,
 } from "../../services/healthConnectService";
 import {
   getSdkStatus,
@@ -32,10 +32,25 @@ export default function HealthConnectSettingsScreen({ navigation }) {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    checkHealthConnectStatus();
+    initializeAndCheck();
   }, []);
 
-  // Health Connect 상태 확인
+  // 👇 초기화 + 상태 확인
+  const initializeAndCheck = async () => {
+    if (Platform.OS !== "android") {
+      setHealthConnectStatus("iOS는 지원하지 않습니다");
+      setChecking(false);
+      return;
+    }
+
+    // 👇 먼저 초기화
+    await initializeHealthConnect();
+
+    // 👇 그 다음 상태 확인
+    await checkHealthConnectStatus();
+  };
+
+  // Health Connect 상태 확인 (SDK + 권한)
   const checkHealthConnectStatus = async () => {
     try {
       if (Platform.OS !== "android") {
@@ -47,7 +62,11 @@ export default function HealthConnectSettingsScreen({ navigation }) {
       const status = await getSdkStatus();
 
       if (status === SdkAvailabilityStatus.SDK_AVAILABLE) {
-        setHealthConnectStatus("정상 연결됨");
+        // 👇 SDK는 사용 가능하지만, 권한이 있는지 추가 확인
+        const hasPermission = await checkHealthConnectPermissions();
+        setHealthConnectStatus(
+          hasPermission ? "정상 연결됨" : "권한 설정 필요"
+        );
       } else if (status === SdkAvailabilityStatus.SDK_UNAVAILABLE) {
         setHealthConnectStatus("설치 필요");
       } else if (
@@ -66,7 +85,7 @@ export default function HealthConnectSettingsScreen({ navigation }) {
     }
   };
 
-  // Health Connect 권한 설정
+  // 👇 Health Connect 권한 설정 - 무조건 스토어로 이동
   const handlePermissionSettings = async () => {
     try {
       if (Platform.OS !== "android") {
@@ -142,7 +161,6 @@ export default function HealthConnectSettingsScreen({ navigation }) {
             {
               text: "확인",
               onPress: () => {
-                // 👇 설정 화면으로 돌아가기
                 navigation.goBack();
               },
             },
@@ -219,7 +237,16 @@ export default function HealthConnectSettingsScreen({ navigation }) {
             <ActivityIndicator color="#4074D8" style={{ marginVertical: 10 }} />
           ) : (
             <>
-              <Text style={styles.statusText}>{healthConnectStatus}</Text>
+              <Text
+                style={[
+                  styles.statusText,
+                  healthConnectStatus === "권한 설정 필요" && {
+                    color: "#FF9800",
+                  },
+                ]}
+              >
+                {healthConnectStatus}
+              </Text>
               {lastSyncTime && (
                 <Text style={styles.lastSyncText}>
                   마지막 동기화: {formatLastSyncTime()}
@@ -281,9 +308,10 @@ export default function HealthConnectSettingsScreen({ navigation }) {
               <Ionicons name="download-outline" size={20} color="#fff" />
             )}
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.syncButton}
-            onPress={() => handleDataSync(180)} // 👈 90 → 180
+            onPress={() => handleDataSync(180)}
             disabled={isSyncing}
           >
             <View style={styles.syncButtonContent}>
