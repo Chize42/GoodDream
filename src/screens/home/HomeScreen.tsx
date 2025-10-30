@@ -254,7 +254,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
               source={require("../../../assets/alramOwl.png")}
               style={styles.cardIllustration}
             />
-            <Text style={styles.cardTitle}>스케쥴 설정</Text>
+            <Text style={styles.cardTitle}>스케줄 설정</Text>
             <Text style={styles.cardSubtitle}>SCHEDULE</Text>
           </TouchableOpacity>
 

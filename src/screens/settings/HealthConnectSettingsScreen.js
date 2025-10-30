@@ -490,6 +490,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#FF9800",
     marginLeft: 8,
+
     lineHeight: 18,
   },
 });
