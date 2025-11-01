@@ -17,8 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-const BUBBLE_IMAGE_URL = "https://i.ibb.co/hRYrBKy1/Group-941.png";
-const BUTTON_IMAGE_URL = "https://i.ibb.co/MxSm3Hpm/Group-6920.png";
+const BUBBLE_IMAGE_URL = require("../../../assets/images/bubble.png");
+const BUTTON_IMAGE_URL = require("../../../assets/images/bubbleButton.png");
 
 export default function BubbleScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -144,7 +144,7 @@ export default function BubbleScreen({ navigation }) {
           ]}
         >
           <ImageBackground
-            source={{ uri: BUBBLE_IMAGE_URL }}
+            source={BUBBLE_IMAGE_URL}
             style={styles.bubbleImage}
             resizeMode="contain"
           >
@@ -156,7 +156,7 @@ export default function BubbleScreen({ navigation }) {
       <View style={styles.bottomButtonContainer}>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
           <ImageBackground
-            source={{ uri: BUTTON_IMAGE_URL }}
+            source={BUTTON_IMAGE_URL}
             style={styles.bottomButtonImage}
             resizeMode="contain"
           ></ImageBackground>

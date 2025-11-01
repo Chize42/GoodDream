@@ -22,10 +22,9 @@ export default function ChallengeStartScreen({ route, navigation }) {
   const [currentDay, setCurrentDay] = useState(1);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const scrollViewRef = useRef(null);
-  const owlImg = "https://i.ibb.co/hxgqmQvL/image-1.png";
-  const footprintImg = "https://i.ibb.co/xqYdhd5S/pngegg-1.png";
-  const successOwlImg =
-    "https://i.ibb.co/hJTLCHsf/Kakao-Talk-20250524-151947386-1.png";
+  const owlImg = require("../../../assets/images/owlImg.png");
+  const footprintImg = require("../../../assets/images/footprintImg.png");
+  const successOwlImg = require("../../../assets/images/successOwlImg.png");
 
   // ⭐️ 저장된 챌린지 데이터 불러오기 및 스크롤
   useEffect(() => {
@@ -174,11 +173,11 @@ const scrollToCurrentDay = (isInitial = false) => {
               <View style={styles.circle}>
                 {isCompleted ? (
                   <Image
-                    source={{ uri: footprintImg }}
+                    source={footprintImg}
                     style={styles.footprint}
                   />
                 ) : isCurrentDay ? (
-                  <Image source={{ uri: owlImg }} style={styles.owl} />
+                  <Image source={owlImg} style={styles.owl} />
                 ) : null}
               </View>
             </View>
@@ -269,7 +268,7 @@ const scrollToCurrentDay = (isInitial = false) => {
               <Text style={styles.closeText}>×</Text>
             </TouchableOpacity>
             <Image
-              source={{ uri: successOwlImg }}
+              source={successOwlImg}
               style={styles.successOwlImg}
             />
             <Text style={styles.successTitle}>오늘의 챌린지 성공!</Text>

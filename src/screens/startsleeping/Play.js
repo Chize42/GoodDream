@@ -111,13 +111,13 @@ const Play = ({ navigation }) => {
       <View style={styles.content}>
         {/* 2. 자고 있는 부엉이 이미지 */}
         <Image
-          source={{ uri: 'https://i.ibb.co/8nFt38dJ/sleepOwl.png' }}
+          source={require("../../../assets/images/sleep-Owl.png")}
           style={styles.owlImage}
         />
 
         {/* 3. 현재 재생되고 있는 음악 (터치 시 모달 열기) */}
         <TouchableOpacity style={styles.musicInfoContainer} onPress={() => setMusicModalVisible(true)}>
-          <Image source={{ uri: 'https://i.ibb.co/tMJtV2kP/sounds.png' }} style={styles.musicIcon} />
+          <Image source={require("../../../assets/images/sounds.png")} style={styles.musicIcon} />
           <Text style={styles.musicTitle}>{currentMusic.title}</Text>
           <Text style={styles.musicCategory}>· {currentMusic.category}</Text>
         </TouchableOpacity>
@@ -125,7 +125,7 @@ const Play = ({ navigation }) => {
         {/* 4. 재생/일시정지 버튼  */}
         <TouchableOpacity onPress={handlePlayPause}>
           <Image
-            source={{ uri: isPlaying ? 'https://i.ibb.co/bMd74SLW/play.png' : 'https://i.ibb.co/pjt4MSNy/pause.png' }}
+            source={isPlaying ? require("../../../assets/images/play.png") : require("../../../assets/images/pause.png")}
             style={styles.playPauseButton}
           />
         </TouchableOpacity>
@@ -170,7 +170,7 @@ const Play = ({ navigation }) => {
 
         {/* 6. 일어나는 시각 알람 표시 */}
         <View style={styles.wakeUpContainer}>
-          <Image source={{ uri: 'https://i.imgur.com/dztYd5c.png' }} style={styles.sunIcon} />
+          <Image source={require("../../../assets/images/sun.png")} style={styles.sunIcon} />
           <Text style={styles.wakeUpText}>06:30 AM</Text>
         </View>
       </View>
@@ -180,7 +180,7 @@ const Play = ({ navigation }) => {
       style={styles.stopButton}
       onPress={() => navigation.navigate('Dismiss')}
     >
-      <Image source={{ uri: 'https://i.ibb.co/ccMZ5kbK/pausebutton.png' }} style={styles.stopIcon} />
+      <Image source={require("../../../assets/images/pausebutton.png")} style={styles.stopIcon} />
       <Text style={styles.stopButtonText}>Stop Sleeping</Text>
     </TouchableOpacity>
 
@@ -207,7 +207,7 @@ const Play = ({ navigation }) => {
                     onPress={() => handleMusicSelection(item.id)}
                   >
                     <Image 
-                        source={{ uri: 'https://i.ibb.co/tMJtV2kP/sounds.png' }} 
+                        source={require("../../../assets/images/sounds.png")} 
                         style={[
                             styles.musicListIcon,
                             isSelected && { tintColor: '#4A90E2' } 
