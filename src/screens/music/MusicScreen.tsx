@@ -23,6 +23,10 @@ import deepSpaceImage from "../../../assets/images/deep-space.jpg";
 import airplaneImage from "../../../assets/images/airplane.png";
 import rainImage from "../../../assets/images/rain.png";
 import libraryImage from "../../../assets/images/library.png";
+import lisztImage from "../../../assets/images/liszt.jpg";
+import erik from "../../../assets/images/erik.png";
+import debussy from "../../../assets/images/debussy.png";
+
 
 // 음원 파일 require 방식으로 import
 const desertWind = require("../../../assets/sounds/desert-wind.mp3");
@@ -31,6 +35,12 @@ const library = require("../../../assets/sounds/library.mp3");
 const rain = require("../../../assets/sounds/rain.mp3");
 const spaceship = require("../../../assets/sounds/spaceship.mp3");
 const whitenoise = require("../../../assets/sounds/rain.mp3");
+const liszt = require("../../../assets/sounds/liszt.mp3");
+const erik1 = require("../../../assets/sounds/erikno1.mp3");
+const erik3 = require("../../../assets/sounds/erikno3.mp3");
+const debussy1 = require("../../../assets/sounds/Debussy.mp3");
+
+
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -93,9 +103,41 @@ const soundData: SoundItem[] = [
     image: deepSpaceImage,
     audio: firewood,
   },
+  {
+    id: "7",
+    title: "Liszt Berceuse S.174",
+    subtitle: "클래식",
+    category: "클래식",
+    image: lisztImage,
+    audio: liszt,
+  },
+  {
+    id: "8",
+    title: "에릭 사티 짐노페디 1번",
+    subtitle: "클래식",
+    category: "클래식",
+    image: erik,
+    audio: erik1,
+  },
+  {
+    id: "9",
+    title: "에릭 사티 짐노페디 3번",
+    subtitle: "클래식",
+    category: "클래식",
+    image: erik,
+    audio: erik3,
+  },
+  {
+    id: "10",
+    title: "드뷔치 - 달빛",
+    subtitle: "클래식",
+    category: "클래식",
+    image: debussy,
+    audio: debussy1,
+  },
 ];
 
-const categoryData = ["전체", "백색소음", "자연", "명상", "다큐멘터리"];
+const categoryData = ["전체", "백색소음", "자연", "명상", "클래식", "다큐멘터리"];
 
 const SoundGridItem = ({
   item,
@@ -150,33 +192,39 @@ const BottomPlayer = ({
   isPlaying: boolean;
   onPlayPause: () => void;
   onPlayerPress: () => void;
-}) => (
-  <TouchableOpacity style={styles.bottomPlayer} onPress={onPlayerPress}>
-    <View style={styles.playerContent}>
-      <Image source={currentSound.image} style={styles.playerImage} />
-      <View style={styles.playerInfo}>
-        <Text style={styles.playerTitle} numberOfLines={1}>
-          {currentSound.title}
-        </Text>
-        <Text style={styles.playerSubtitle} numberOfLines={1}>
-          {currentSound.subtitle}
-        </Text>
+}) => {
+  // 안전성 체크 추가
+  if (!currentSound || !currentSound.title || !currentSound.subtitle) {
+    return null;
+  }
+
+  return (
+    <TouchableOpacity style={styles.bottomPlayer} onPress={onPlayerPress}>
+      <View style={styles.playerContent}>
+        <Image source={currentSound.image} style={styles.playerImage} />
+        <View style={styles.playerInfo}>
+          <Text style={styles.playerTitle} numberOfLines={1}>
+            {String(currentSound.title)}
+          </Text>
+          <Text style={styles.playerSubtitle} numberOfLines={1}>
+            {String(currentSound.subtitle)}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.playerPlayButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            onPlayPause();
+          }}
+        >
+          <Ionicons name={isPlaying ? "pause" : "play"} size={20} color="#fff" />
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.playerPlayButton}
-        onPress={(e) => {
-          e.stopPropagation();
-          onPlayPause();
-        }}
-      >
-        <Ionicons name={isPlaying ? "pause" : "play"} size={20} color="#fff" />
-      </TouchableOpacity>
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 export default function MusicScreen({ navigation }: { navigation: any }) {
-  // [수정] 1. playSound 대신 playSingleSound를 가져옵니다.
   const { currentSound, isPlaying, playSingleSound, togglePlayPause } =
     useMusicContext();
 
@@ -188,17 +236,11 @@ export default function MusicScreen({ navigation }: { navigation: any }) {
       : soundData.filter((item) => item.category === activeCategory);
 
   const handlePlaySound = (item: SoundItem) => {
-    // [수정] 2. playSound(item) 대신 playSingleSound(item)를 호출합니다.
-    // 이것이 큐를 비우고 단일 곡 재생 모드로 만듭니다.
     playSingleSound(item);
   };
 
   const handlePlayerPress = () => {
     if (currentSound) {
-      // "MusicPlayer" (MusicPlayerScreen)로 이동합니다.
-      // MusicPlayerScreen의 useEffect는 이 params를 받지만,
-      // 이미 currentSound가 재생 중이므로 playSingleSound를 다시 호출하지 않습니다.
-      // 큐는 이미 handlePlaySound에서 비워진 상태입니다.
       navigation.navigate("MusicPlayer", { ...currentSound });
     }
   };
@@ -275,8 +317,8 @@ export default function MusicScreen({ navigation }: { navigation: any }) {
         </View>
       </ScrollView>
 
-      {/* Bottom Player */}
-      {currentSound && (
+      {/* Bottom Player - null 체크 추가 */}
+      {currentSound && currentSound.title && currentSound.subtitle && (
         <BottomPlayer
           currentSound={currentSound}
           isPlaying={isPlaying}
@@ -288,7 +330,6 @@ export default function MusicScreen({ navigation }: { navigation: any }) {
   );
 }
 
-// [수정 없음] 스타일(styles) 코드는 기존과 동일합니다.
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
