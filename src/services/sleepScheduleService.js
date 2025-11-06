@@ -4,6 +4,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   updateDoc,
   deleteDoc,
   doc,
@@ -233,29 +234,53 @@ export const deleteSleepSchedules = async (userId, scheduleIds) => {
 };
 
 // 스케줄 활성화/비활성화 토글
-export const toggleScheduleEnabled = async (userId, scheduleId) => {
+
+export const toggleScheduleEnabled = async (
+  userId,
+  scheduleId,
+  forceValue = null
+) => {
   try {
     if (!userId) throw new Error("사용자 ID가 필요합니다");
 
+    // 먼저 스케줄 목록에서 찾기
     const schedules = await getSleepSchedules(userId);
-    const schedule = schedules.find((s) => s.id === scheduleId);
+    const targetSchedule = schedules.find((s) => s.id === scheduleId);
 
-    if (!schedule) {
+    if (!targetSchedule || !targetSchedule.firebaseId) {
       throw new Error("스케줄을 찾을 수 없습니다");
     }
 
-    const newEnabledState = !schedule.enabled;
-    const updatedSchedule = await updateSleepSchedule(userId, scheduleId, {
-      enabled: newEnabledState,
+    // firebaseId로 문서 참조
+    const scheduleRef = doc(
+      db,
+      "users",
+      userId,
+      "sleepSchedules",
+      targetSchedule.firebaseId
+    );
+
+    const newEnabledValue =
+      forceValue !== null ? forceValue : !targetSchedule.enabled;
+
+    await updateDoc(scheduleRef, {
+      enabled: newEnabledValue,
+      updatedAt: serverTimestamp(),
     });
 
-    return updatedSchedule;
+    // FCM 토픽 구독 상태 업데이트
+    if (newEnabledValue) {
+      await subscribeToSchedule(scheduleId);
+    } else {
+      await unsubscribeFromSchedule(scheduleId);
+    }
+
+    return { ...targetSchedule, enabled: newEnabledValue };
   } catch (error) {
     console.error("스케줄 토글 실패:", error);
     throw error;
   }
 };
-
 // 특정 요일의 활성화된 스케줄 조회
 export const getActiveSchedulesForDay = async (userId, dayOfWeek) => {
   try {
