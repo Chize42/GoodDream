@@ -25,10 +25,11 @@ export default function LinkScreen({ navigation }) {
 
         <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8}>
           <View style={styles.btnInner}>
-            <Image
-              source={{ uri: "https://i.ibb.co/W489VZBp/Group-6795.png" }}
-              style={styles.googleIcon}
-              resizeMode="contain"
+            <Ionicons 
+              name="logo-google" 
+              size={24} // styles.googleIcon의 width/height 값으로 조절
+              color="#fff" // 아이콘 색상 (styles.googleIcon의 tintColor 또는 원하는 색상)
+              // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
             />
             <Text style={styles.googleText}>CONTINUE WITH GOOGLE</Text>
           </View>

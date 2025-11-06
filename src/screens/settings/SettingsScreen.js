@@ -19,25 +19,33 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../services/firebase";
 
 const menuIcons = {
-  "계정 센터":
-    "https://i.ibb.co/zhpSWYS0/material-symbols-person-outline-rounded.png",
-  알림: "https://i.ibb.co/gZWMyPV5/Outline.png",
-  "계정 연동": "https://i.ibb.co/2YH78Vcq/Outline.png",
-  "Health Connect": "https://i.ibb.co/2YH78Vcq/Outline.png", // 👈 추가
-  고객센터: "https://i.ibb.co/JFySN1S6/stash-question.png",
+  "계정 센터": "person-outline",
+  "알림": "notifications-outline", // 'Outline.png' -> '알림'에 맞는 아이콘
+  "계정 연동": "link-outline", // 'Outline.png' -> '계정 연동'에 맞는 아이콘
+  "고객센터": "help-circle-outline", // 'stash-question.png'
 };
 
-const MenuItem = ({ iconUri, text, onPress, iconComponent }) => (
+const MenuItem = ({ iconName, text, onPress, iconComponent }) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress}>
     {iconComponent ? (
-      iconComponent
-    ) : iconUri ? (
-      <Image source={{ uri: iconUri }} style={styles.menuIcon} />
+      iconComponent // 1. Health Connect 같은 커스텀 컴포넌트 우선
+    ) : iconName ? (
+      // 2. iconName이 있으면 Ionicons 렌더링
+      <Ionicons
+        name={iconName}
+        size={20} // styles.menuIcon의 width/height
+        color="#fff" // styles.menuIcon의 tintColor
+        style={{ marginRight: 10 }} // styles.menuIcon의 marginRight
+      />
     ) : null}
     <Text style={styles.menuText}>{text}</Text>
-    <Image
-      source={{ uri: "https://i.ibb.co/60229hwt/Arrow.png" }}
-      style={styles.arrowIcon}
+    
+    {/* 3. 오른쪽 화살표 Image를 Ionicons로 변경 */}
+    <Ionicons
+      name="chevron-forward"
+      size={20} // styles.arrowIcon의 width/height
+      color="#aaa" // styles.arrowIcon의 tintColor
+      style={{ marginLeft: "auto" }} // styles.arrowIcon의 marginLeft
     />
   </TouchableOpacity>
 );
@@ -185,9 +193,7 @@ export default function SettingsScreen({ navigation }) {
 
         <View style={styles.profile}>
           <Image
-            source={{
-              uri: "https://em-content.zobj.net/source/apple/354/sleeping-face_1f634.png",
-            }}
+            source={require("../../../assets/images/avatar.png")}
             style={styles.avatar}
           />
           {isEditing ? (
@@ -209,50 +215,51 @@ export default function SettingsScreen({ navigation }) {
             onPress={isEditing ? handleSaveUsername : handleEditPress}
             disabled={loading}
           >
-            <Image
-              source={{ uri: "https://i.ibb.co/k6ms3py0/bx-pencil.png" }}
-              style={styles.editIcon}
+            <Ionicons
+              name="pencil"
+              size={16} 
+              color="#ccc" 
             />
           </TouchableOpacity>
         </View>
 
         <Text style={styles.emailText}>{user.email}</Text>
 
-        <View style={styles.menuBox}>
-          <MenuItem
-            text="계정 센터"
-            iconUri={menuIcons["계정 센터"]}
-            onPress={() => handlePress("계정 센터")}
-          />
-          <MenuItem
-            text="알림"
-            iconUri={menuIcons["알림"]}
-            onPress={() => handlePress("알림")}
-          />
-          <MenuItem
-            text="계정 연동"
-            iconUri={menuIcons["계정 연동"]}
-            onPress={() => handlePress("계정 연동")}
-          />
-          {/* 👇 Health Connect 메뉴 추가 */}
-          <MenuItem
-            text="Health Connect"
-            iconComponent={
-              <Ionicons
-                name="fitness-outline"
-                size={20}
-                color="#fff"
-                style={{ marginRight: 10 }}
-              />
-            }
-            onPress={() => handlePress("Health Connect")}
-          />
-          <MenuItem
-            text="고객센터"
-            iconUri={menuIcons["고객센터"]}
-            onPress={() => handlePress("고객센터")}
-          />
-        </View>
+      <View style={styles.menuBox}>
+        <MenuItem
+          text="계정 센터"
+          iconName={menuIcons["계정 센터"]} 
+          onPress={() => handlePress("계정 센터")}
+        />
+        <MenuItem
+          text="알림"
+          iconName={menuIcons["알림"]} 
+          onPress={() => handlePress("알림")}
+        />
+        <MenuItem
+          text="계정 연동"
+          iconName={menuIcons["계정 연동"]} 
+          onPress={() => handlePress("계정 연동")}
+        />
+        {/* 👇 Health Connect 메뉴 */}
+        <MenuItem
+          text="Health Connect"
+          iconComponent={
+            <Ionicons
+              name="fitness-outline"
+              size={20}
+              color="#fff"
+              style={{ marginRight: 10 }}
+            />
+          }
+          onPress={() => handlePress("Health Connect")}
+        />
+        <MenuItem
+          text="고객센터"
+          iconName={menuIcons["고객센터"]} 
+          onPress={() => handlePress("고객센터")}
+        />
+      </View>
 
         <View style={styles.logoutBox}>
           <MenuItem text="로그아웃" onPress={() => handlePress("로그아웃")} />
