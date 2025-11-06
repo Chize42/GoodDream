@@ -236,6 +236,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
   };
 
   // ✅ 메인 토글 - FCM 방식으로 수정
+  // ✅ 메인 토글 - 모든 스케줄 활성화/비활성화
   const handleMainSleepEnabledChange = async (value) => {
     try {
       setIsMainSleepEnabled(value);
@@ -250,16 +251,36 @@ const SleepScheduleScreen = ({ navigation, route }) => {
           setIsMainSleepEnabled(false);
         }
       } else {
-        // 알림 비활성화 - FCM에서는 서버가 알림 관리하므로 안내만
-        Alert.alert(
-          "알림 비활성화",
-          "수면 알림이 비활성화되었습니다.\n개별 스케줄을 끄거나 삭제하여 관리할 수 있습니다."
+        // 알림 비활성화 - 모든 스케줄을 비활성화
+        if (!user?.uid) {
+          Alert.alert("오류", "로그인이 필요합니다");
+          setIsMainSleepEnabled(true);
+          return;
+        }
+
+        setIsLoading(true);
+
+        // 모든 스케줄을 비활성화
+        const updatePromises = sleepSchedules.map((schedule) =>
+          toggleScheduleEnabledService(user.uid, schedule.id, false)
         );
+
+        await Promise.all(updatePromises);
+
+        // UI 업데이트
+        setSleepSchedules((prev) =>
+          prev.map((schedule) => ({ ...schedule, enabled: false }))
+        );
+
+        setIsLoading(false);
+
+        Alert.alert("알림 비활성화", "모든 수면 알림이 비활성화되었습니다.");
       }
     } catch (error) {
       console.error("메인 토글 처리 실패:", error);
       Alert.alert("오류", "알림 설정 변경에 실패했습니다.");
       setIsMainSleepEnabled(!value);
+      setIsLoading(false);
     }
   };
 

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "수면 리포트",
+    "name": "Good Dream",
     "slug": "sleep-tracker-app",
     "icon": "/assets/appicon.png",
     "version": "1.0.0",
@@ -8,6 +8,7 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#111827",
     "splash": {
+      "image": "/assets/splash.png",
       "backgroundColor": "#111827",
       "resizeMode": "contain"
     },
