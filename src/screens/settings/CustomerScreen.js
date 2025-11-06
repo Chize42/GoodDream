@@ -78,11 +78,12 @@ export default function CustomerScreen({ navigation }) {
               activeOpacity={0.8}
               onPress={() => handleFaqPress(idx)}
             >
-              <Image
-                source={{ uri: "https://i.ibb.co/LzVnRFH/wpf-ask-question.png" }}
-                style={styles.faqIcon}
-                resizeMode="contain"
-              />
+              <Ionicons 
+                name="help-circle-outline" 
+                size={24} // styles.faqIcon의 width/height 값으로 조절
+                color="#fff" // styles.faqIcon의 tintColor 값으로 조절
+                // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
+            />
               <Text style={styles.faqQuestion}>{item.question}</Text>
             </TouchableOpacity>
           ))}
@@ -97,10 +98,11 @@ export default function CustomerScreen({ navigation }) {
             onPress={() => navigation.navigate("서비스 이용 문의")}
           >
             <Text style={styles.menuText}>서비스 이용 문의</Text>
-            <Image
-              source={{ uri: "https://i.ibb.co/60229hw/Arrow.png" }}
-              style={styles.menuArrowIcon}
-              resizeMode="contain"
+            <Ionicons 
+              name="chevron-forward" 
+              size={20} // styles.menuArrowIcon의 width/height 값으로 조절
+              color="#aaa" // styles.menuArrowIcon의 tintColor 값으로 조절
+              // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
             />
           </TouchableOpacity>
           
@@ -110,11 +112,12 @@ export default function CustomerScreen({ navigation }) {
             onPress={() => navigation.navigate("문의 내역")}
           >
             <Text style={styles.menuText}>문의 내역</Text>
-            <Image
-              source={{ uri: "https://i.ibb.co/60229hw/Arrow.png" }}
-              style={styles.menuArrowIcon}
-              resizeMode="contain"
-            />
+          <Ionicons 
+            name="chevron-forward" 
+            size={20} // styles.menuArrowIcon의 width/height 값으로 조절
+            color="#aaa" // styles.menuArrowIcon의 tintColor 값으로 조절
+            // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
+          />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -123,10 +126,11 @@ export default function CustomerScreen({ navigation }) {
             onPress={() => navigation.navigate("광고 문의")}
           >
             <Text style={styles.menuText}>광고 문의</Text>
-            <Image
-              source={{ uri: "https://i.ibb.co/60229hw/Arrow.png" }}
-              style={styles.menuArrowIcon}
-              resizeMode="contain"
+            <Ionicons 
+              name="chevron-forward" 
+              size={20} // styles.menuArrowIcon의 width/height 값으로 조절
+              color="#aaa" // styles.menuArrowIcon의 tintColor 값으로 조절
+              // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
             />
           </TouchableOpacity>
         </View>
