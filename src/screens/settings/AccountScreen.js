@@ -202,9 +202,7 @@ export default function AccountScreen({ navigation, route }) {
 
         <View style={styles.profile}>
           <Image
-            source={{
-              uri: "https://em-content.zobj.net/source/apple/354/sleeping-face_1f634.png",
-            }}
+            source={require("../../../assets/images/avatar.png")}
             style={styles.avatar}
           />
         </View>
@@ -243,9 +241,11 @@ const MenuItem = ({ text, onPress, isDelete }) => (
     <Text style={[styles.menuText, isDelete && { color: "red" }]}>
       {text || ""}
     </Text>
-    <Image
-      source={{ uri: "https://i.ibb.co/60229hwt/Arrow.png" }}
-      style={[styles.menuArrowIcon, isDelete && { tintColor: "red" }]}
+    <Ionicons
+      name="chevron-forward"
+      size={20}
+      color={isDelete ? "red" : "#aaa"}
+      style={{ marginLeft: "auto" }}
     />
   </TouchableOpacity>
 );

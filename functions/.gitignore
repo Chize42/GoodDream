@@ -1,2 +1,5 @@
 node_modules/
 *.local
+
+# Firebase Files
+firebase-debug.log

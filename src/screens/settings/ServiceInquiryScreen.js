@@ -205,9 +205,11 @@ export default function ServiceInquiryScreen({ navigation }) {
             activeOpacity={0.7}
             onPress={pickImage}
           >
-            <Image
-              source={{ uri: "https://i.ibb.co/nqH4W6xW/tabler-camera.png" }}
-              style={styles.attachIcon}
+            <Ionicons 
+              name="camera-outline" // 또는 "camera"
+              size={20} // width/height: 20
+              color="#ccc" // tintColor가 없으므로 원하는 색상으로 지정 (예: #ccc)
+              style={{ marginTop: 1 }} // marginTop: 1
             />
             <Text style={styles.fileBtnText}>파일 선택</Text>
           </TouchableOpacity>

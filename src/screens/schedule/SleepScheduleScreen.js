@@ -1,5 +1,4 @@
 // src/screens/schedule/SleepScheduleScreen.js
-import { testFCM } from "../../services/firebaseMessagingService";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -13,8 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Notifications from "expo-notifications";
-import { useAuth } from "../../contexts/AuthContext"; // ✅ 추가
+import { useAuth } from "../../contexts/AuthContext";
 import {
   getSleepSchedules,
   deleteSleepSchedules,
@@ -23,23 +21,20 @@ import {
   updateSleepSchedule,
 } from "../../services/sleepScheduleService";
 import {
-  sendTestNotification,
-  getScheduledNotifications,
-  cancelAllScheduleNotifications,
-  requestNotificationPermissions,
-} from "../../services/localNotificationService";
+  requestFCMPermissions,
+  getFCMToken,
+  saveFCMTokenToFirestore,
+} from "../../services/firebaseMessagingService";
 import { formatDaysString } from "../../utils/dayUtils";
 
 const SleepScheduleScreen = ({ navigation, route }) => {
-  const { user } = useAuth(); // ✅ AuthContext에서 user 가져오기
+  const { user } = useAuth();
 
   const [isMainSleepEnabled, setIsMainSleepEnabled] = useState(true);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
   const [sleepSchedules, setSleepSchedules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // ❌ 제거: const userId = "user123";
 
   // 컴포넌트 마운트 시 데이터 로드 및 알림 설정
   useEffect(() => {
@@ -49,20 +44,20 @@ const SleepScheduleScreen = ({ navigation, route }) => {
     } else {
       setIsLoading(false);
     }
-  }, [user]); // ✅ user 의존성 추가
+  }, [user]);
 
   // 새로운 스케줄이나 편집된 스케줄이 있을 때 처리
   useEffect(() => {
     const handleParams = async () => {
       if (route.params?.newSchedule) {
         const newSchedule = route.params.newSchedule;
-        navigation.setParams({ newSchedule: null }); // ✅ 먼저 초기화
+        navigation.setParams({ newSchedule: null });
         await handleNewSchedule(newSchedule);
       }
 
       if (route.params?.editedSchedule) {
         const editedSchedule = route.params.editedSchedule;
-        navigation.setParams({ editedSchedule: null }); // ✅ 먼저 초기화
+        navigation.setParams({ editedSchedule: null });
         await handleEditedSchedule(editedSchedule);
       }
     };
@@ -79,7 +74,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
 
       setIsLoading(true);
       console.log("📖 스케줄 로드 시작:", user.uid);
-      const schedules = await getSleepSchedules(user.uid); // ✅ user.uid 사용
+      const schedules = await getSleepSchedules(user.uid);
       setSleepSchedules(schedules);
       console.log("✅ 스케줄 로드 완료:", schedules.length);
     } catch (error) {
@@ -90,18 +85,26 @@ const SleepScheduleScreen = ({ navigation, route }) => {
     }
   };
 
+  // ✅ FCM 초기화 함수
   const initializeNotifications = async () => {
     try {
-      const { status } = await Notifications.getPermissionsAsync();
-      console.log("현재 알림 권한 상태:", status);
+      // FCM 권한 요청
+      const granted = await requestFCMPermissions();
 
-      if (status !== "granted") {
-        await requestNotificationPermissions();
+      if (!granted) {
+        console.log("❌ FCM 권한 거부됨");
+        Alert.alert("알림 설정", "알림 권한이 필요합니다.");
+        return;
       }
 
-      console.log("알림 권한 확인 완료");
+      // FCM 토큰 가져오기 및 저장
+      const fcmToken = await getFCMToken();
+      if (fcmToken && user?.uid) {
+        await saveFCMTokenToFirestore(user.uid, fcmToken);
+        console.log("✅ FCM 초기화 완료");
+      }
     } catch (error) {
-      console.error("알림 권한 확인 실패:", error);
+      console.error("❌ FCM 초기화 실패:", error);
       Alert.alert("알림 설정", "알림 권한 설정에 실패했습니다.");
     }
   };
@@ -121,7 +124,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
 
       console.log("✅ 저장된 스케줄:", savedSchedule);
 
-      // ✅ 중복 제거 후 추가
+      // 중복 제거 후 추가
       setSleepSchedules((prev) => {
         const filtered = prev.filter((s) => s.id !== savedSchedule.id);
         return [savedSchedule, ...filtered];
@@ -142,7 +145,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
       }
 
       const updatedSchedule = await updateSleepSchedule(
-        user.uid, // ✅ user.uid 사용
+        user.uid,
         editedSchedule.id,
         editedSchedule
       );
@@ -180,7 +183,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
 
       setIsLoading(true);
 
-      await deleteSleepSchedules(user.uid, selectedItems); // ✅ user.uid 사용
+      await deleteSleepSchedules(user.uid, selectedItems);
       setSleepSchedules(
         sleepSchedules.filter(
           (schedule) => !selectedItems.includes(schedule.id)
@@ -216,7 +219,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
         const updatedSchedule = await toggleScheduleEnabledService(
           user.uid,
           id
-        ); // ✅ user.uid 사용
+        );
         setSleepSchedules(
           sleepSchedules.map((schedule) =>
             schedule.id === id ? updatedSchedule : schedule
@@ -232,21 +235,52 @@ const SleepScheduleScreen = ({ navigation, route }) => {
     }
   };
 
+  // ✅ 메인 토글 - FCM 방식으로 수정
+  // ✅ 메인 토글 - 모든 스케줄 활성화/비활성화
   const handleMainSleepEnabledChange = async (value) => {
     try {
       setIsMainSleepEnabled(value);
 
       if (value) {
-        await requestNotificationPermissions();
-        Alert.alert("알림 활성화", "수면 스케줄 알림이 활성화되었습니다.");
+        // 알림 활성화 - FCM 권한 재확인
+        const granted = await requestFCMPermissions();
+        if (granted) {
+          Alert.alert("알림 활성화", "수면 스케줄 알림이 활성화되었습니다.");
+        } else {
+          Alert.alert("오류", "알림 권한이 필요합니다.");
+          setIsMainSleepEnabled(false);
+        }
       } else {
-        await cancelAllScheduleNotifications();
+        // 알림 비활성화 - 모든 스케줄을 비활성화
+        if (!user?.uid) {
+          Alert.alert("오류", "로그인이 필요합니다");
+          setIsMainSleepEnabled(true);
+          return;
+        }
+
+        setIsLoading(true);
+
+        // 모든 스케줄을 비활성화
+        const updatePromises = sleepSchedules.map((schedule) =>
+          toggleScheduleEnabledService(user.uid, schedule.id, false)
+        );
+
+        await Promise.all(updatePromises);
+
+        // UI 업데이트
+        setSleepSchedules((prev) =>
+          prev.map((schedule) => ({ ...schedule, enabled: false }))
+        );
+
+        setIsLoading(false);
+
         Alert.alert("알림 비활성화", "모든 수면 알림이 비활성화되었습니다.");
       }
     } catch (error) {
       console.error("메인 토글 처리 실패:", error);
       Alert.alert("오류", "알림 설정 변경에 실패했습니다.");
       setIsMainSleepEnabled(!value);
+      setIsLoading(false);
     }
   };
 
@@ -280,31 +314,7 @@ const SleepScheduleScreen = ({ navigation, route }) => {
     });
   };
 
-  const handleTestNotification = async () => {
-    try {
-      await sendTestNotification();
-      Alert.alert("테스트", "2초 후 테스트 알림이 표시됩니다!");
-    } catch (error) {
-      Alert.alert("오류", "테스트 알림 전송에 실패했습니다.");
-      console.error("테스트 알림 오류:", error);
-    }
-  };
-
-  const checkScheduledNotifications = async () => {
-    try {
-      const notifications = await getScheduledNotifications();
-      console.log("현재 스케줄된 알림들:", notifications);
-      Alert.alert(
-        "알림 확인",
-        `현재 ${notifications.length}개의 알림이 스케줄되어 있습니다.`
-      );
-    } catch (error) {
-      Alert.alert("오류", "알림 확인에 실패했습니다.");
-      console.error("알림 확인 오류:", error);
-    }
-  };
-
-  // ✅ 로그인 안 된 경우 처리
+  // 로그인 안 된 경우 처리
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>

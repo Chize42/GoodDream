@@ -301,7 +301,9 @@ function HomeScreen({ navigation }: { navigation: any }) {
 
         <TouchableOpacity
           style={styles.startSleepingBtn}
-          onPress={() => navigation.navigate("Play")}
+          onPress={() => navigation.navigate("Play", {
+            startTime: new Date().toISOString(),
+          })}
         >
           <Image
             source={require("../../../assets/moon.png")}

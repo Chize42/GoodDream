@@ -137,9 +137,11 @@ export default function EditAccountScreen({ navigation, route }) {
               onPress={() => setEditField(fieldKey)}
               disabled={loading}
             >
-              <Image
-                source={{ uri: "https://i.ibb.co/k6ms3py0/bx-pencil.png" }}
-                style={styles.editIcon}
+              <Ionicons 
+                name="pencil" 
+                size={16} // width/height: 16
+                color="#ccc" // tintColor: "#ccc"
+                style={{ marginLeft: 8 }} // marginLeft: 8
               />
             </TouchableOpacity>
           )}
@@ -161,9 +163,11 @@ export default function EditAccountScreen({ navigation, route }) {
             onPress={() => setShowGenderModal(true)}
             disabled={loading}
           >
-            <Image
-              source={{ uri: "https://i.ibb.co/k6ms3py0/bx-pencil.png" }}
-              style={styles.editIcon}
+            <Ionicons 
+              name="pencil" 
+              size={16} // width/height: 16
+              color="#ccc" // tintColor: "#ccc"
+              style={{ marginLeft: 8 }} // marginLeft: 8
             />
           </TouchableOpacity>
         </View>

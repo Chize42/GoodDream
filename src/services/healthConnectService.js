@@ -21,6 +21,34 @@ export const initializeHealthConnect = async () => {
   }
 };
 
+// 👇 권한 확인 함수 (초기화 포함)
+export const checkHealthConnectPermissions = async () => {
+  try {
+    // 👇 초기화 먼저!
+    const initResult = await initializeHealthConnect();
+    if (!initResult.success) {
+      return false;
+    }
+
+    // 최근 1일치 데이터를 읽어보는 시도로 권한 확인
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    await readRecords("SleepSession", {
+      timeRangeFilter: {
+        operator: "between",
+        startTime: yesterday.toISOString(),
+        endTime: new Date().toISOString(),
+      },
+    });
+
+    return true; // 에러 없이 읽혔으면 권한 있음
+  } catch (error) {
+    console.error("권한 확인 실패:", error);
+    return false; // 에러 발생하면 권한 없음
+  }
+};
+
 // Health Connect 권한 요청
 export const requestHealthConnectPermissions = async () => {
   try {

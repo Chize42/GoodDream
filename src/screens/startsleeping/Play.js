@@ -14,12 +14,15 @@ const musicData = [
   { id: '6', title: 'White Noise', category: 'Sleep', file: require('../../../assets/sounds/whitenoise.mp3') },
 ];
 
-const Play = ({ navigation }) => {
+const Play = ({ navigation, route }) => {
   // 상태 관리
   const [isPlaying, setIsPlaying] = useState(false); // 재생/일시정지 상태
   const [isTimerOpen, setIsTimerOpen] = useState(false); // 타이머 드롭다운 상태
   const [selectedTime, setSelectedTime] = useState('select hour...'); // 선택된 시간 (드롭다운)
   const [isMusicModalVisible, setMusicModalVisible] = useState(false); // 음악 목록 모달 상태
+
+  // 시작 시간 가져오기
+  const { startTime } = route.params || {};
   const [selectedMusicId, setSelectedMusicId] = useState(musicData[0].id);
   
   // 오디오 관련 상태 추가
@@ -79,7 +82,17 @@ const Play = ({ navigation }) => {
         setIsPlaying(true);
     }
   };
+  const handleStopSleeping = () => {
+    const stopTime = new Date();
+    const startTimeObj = new Date(startTime);
 
+    const durationMs = stopTime.getTime() - startTimeObj.getTime();
+    if (sound) {
+      sound.stopAsync();
+      sound.unloadAsync();
+    }
+    navigation.navigate('Dismiss', { durationMs: durationMs });
+  };
 
   // 4. 컴포넌트 언마운트 시 오디오 정리 (메모리 누수 방지)
   useEffect(() => {
@@ -167,18 +180,12 @@ const Play = ({ navigation }) => {
             </View>
           )}
         </View>
-
-        {/* 6. 일어나는 시각 알람 표시 */}
-        <View style={styles.wakeUpContainer}>
-          <Image source={require("../../../assets/images/sun.png")} style={styles.sunIcon} />
-          <Text style={styles.wakeUpText}>06:30 AM</Text>
-        </View>
       </View>
 
       {/* 7. Stop Sleeping 버튼 */}
       <TouchableOpacity 
       style={styles.stopButton}
-      onPress={() => navigation.navigate('Dismiss')}
+      onPress={handleStopSleeping}
     >
       <Image source={require("../../../assets/images/pausebutton.png")} style={styles.stopIcon} />
       <Text style={styles.stopButtonText}>Stop Sleeping</Text>

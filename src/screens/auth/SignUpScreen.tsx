@@ -106,7 +106,7 @@ function SignUpScreen({ navigation }: { navigation: any }) {
 
       Alert.alert(
         "회원가입 완료!",
-        "3개월치 수면 데이터가 자동으로 생성되었습니다.",
+        "환영합니다. 굿드림과 함께 좋은 꿈 꾸세요.",
         [{ text: "확인" }]
       );
 

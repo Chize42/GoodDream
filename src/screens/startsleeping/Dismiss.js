@@ -1,8 +1,24 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
+const formatDuration = (ms) => {
+  if (ms === undefined || ms === null || ms < 0) {
+    return '00h 00m'; // 기본값
+  }
 
-const Dismiss  = ({ navigation }) => {
+  const totalMinutes = Math.floor(ms / (1000 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  // 2자리 숫자로 포맷 (예: 6 -> "06")
+  const formattedHours = String(hours).padStart(2, '0');
+  const formattedMinutes = String(minutes).padStart(2, '0');
+
+  return `${formattedHours}h ${formattedMinutes}m`;
+};
+const Dismiss  = ({ navigation, route }) => {
+  const { durationMs } = route.params;
+  const sleepDuration = formatDuration(durationMs);
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -25,23 +41,14 @@ const Dismiss  = ({ navigation }) => {
           <Text style={styles.wakeUpTitle}>Wake-up. It's time!</Text>
 
           {/* 수면 시각, 수면 질 시각화 */}
+          {/* 알람 정보 연동 */}
           <View style={styles.statsCard}>
             <View style={styles.statItem}>
               <View style={styles.statHeader}>
                 <Image source={require("../../../assets/images/sleep.png")} style={styles.statIcon} />
                 <Text style={styles.statLabel}>Sleep</Text>
               </View>
-              <Text style={styles.statValue}>06h 41m</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.statItem}>
-              <View style={styles.statHeader}>
-                <View style={styles.qualityCircleOuter}>
-                    <View style={styles.qualityCircleInner} />
-                </View>
-                <Text style={styles.statLabel}>Quality</Text>
-              </View>
-              <Text style={styles.statValue}>60%</Text>
+              <Text style={styles.statValue}>{sleepDuration}</Text>
             </View>
           </View>
         </View>
