@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.tsx (확장자 변경: .js → .tsx)
+// src/contexts/AuthContext.tsx
 import React, {
   createContext,
   useState,
@@ -15,7 +15,6 @@ import {
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
-import { initializeDummyData } from "../services/initializeData";
 
 // ✅ TypeScript 타입 정의
 interface AuthContextType {
@@ -86,11 +85,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
 
       console.log("✅ Firestore 사용자 정보 저장 완료");
-
-      // 3. 더미 수면 데이터 자동 생성 (3개월치)
-      console.log("🌙 더미 수면 데이터 생성 시작...");
-      await initializeDummyData(newUser.uid);
-      console.log("✅ 더미 데이터 생성 완료");
 
       return newUser;
     } catch (error: any) {
