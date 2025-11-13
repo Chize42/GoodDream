@@ -37,11 +37,9 @@ import SleepDetailScreen from "./src/screens/sleepReport/SleepDetailScreen";
 import SettingsScreen from "./src/screens/settings/SettingsScreen";
 import AccountScreen from "./src/screens/settings/AccountScreen";
 import EditAccountScreen from "./src/screens/settings/EditAccountScreen";
-import LinkScreen from "./src/screens/settings/LinkScreen";
 import CustomerScreen from "./src/screens/settings/CustomerScreen";
 import ServiceInquiryScreen from "./src/screens/settings/ServiceInquiryScreen";
 import InquiryHistoryScreen from "./src/screens/settings/InquiryHistoryScreen";
-import AdvertisementInquiryScreen from "./src/screens/settings/AdvertisementInquiryScreen";
 import CompletedInquiryScreen from "./src/screens/settings/CompletedInquiryScreen";
 import InquiryDetailScreen from "./src/screens/settings/InquiryDetailScreen";
 import NotificationScreen from "./src/screens/settings/NotificationScreen";
@@ -115,7 +113,6 @@ function MainStack() {
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="계정 센터" component={AccountScreen} />
       <Stack.Screen name="EditAccount" component={EditAccountScreen} />
-      <Stack.Screen name="계정 연동" component={LinkScreen} />
       <Stack.Screen name="고객센터" component={CustomerScreen} />
       <Stack.Screen name="알림" component={NotificationScreen} />
       <Stack.Screen name="서비스 이용 문의" component={ServiceInquiryScreen} />
@@ -128,7 +125,6 @@ function MainStack() {
         name="CompletedInquiryScreen"
         component={CompletedInquiryScreen}
       />
-      <Stack.Screen name="광고 문의" component={AdvertisementInquiryScreen} />
       <Stack.Screen
         name="InquiryDetailScreen"
         component={InquiryDetailScreen}

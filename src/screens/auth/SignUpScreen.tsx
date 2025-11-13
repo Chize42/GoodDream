@@ -4,9 +4,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   Dimensions,
-  Image,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -17,9 +15,8 @@ import {
   View,
   Alert,
   ActivityIndicator,
+  Modal,
 } from "react-native";
-
-const googleImage = require("../../../assets/google.png");
 
 const { width, height } = Dimensions.get("window");
 
@@ -33,8 +30,8 @@ interface FormData {
 }
 
 function SignUpScreen({ navigation }: { navigation: any }) {
-  const { signUp } = useAuth(); // ✅ AuthContext에서 가져오기
-  const [loading, setLoading] = useState(false); // ✅ 로딩 상태 추가
+  const { signUp } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     username: "",
@@ -89,14 +86,12 @@ function SignUpScreen({ navigation }: { navigation: any }) {
     }));
   };
 
-  // ✅ 회원가입 처리 함수 (Firebase 연동)
   const handleGetStarted = async () => {
     if (!isFormValid) return;
 
     setLoading(true);
 
     try {
-      // ✅ AuthContext의 signUp 사용 (더미 데이터 자동 생성 포함)
       await signUp(formData.email, formData.password, {
         username: formData.username,
         age: formData.age,
@@ -109,8 +104,6 @@ function SignUpScreen({ navigation }: { navigation: any }) {
         "환영합니다. 굿드림과 함께 좋은 꿈 꾸세요.",
         [{ text: "확인" }]
       );
-
-      // ✅ AuthContext가 자동으로 MainStack으로 전환
     } catch (error: any) {
       let errorMessage = "회원가입에 실패했습니다";
 
@@ -159,19 +152,6 @@ function SignUpScreen({ navigation }: { navigation: any }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8}>
-              <Image source={googleImage} style={styles.socialIcon} />
-              <Text style={styles.socialBtnText}>CONTINUE WITH GOOGLE</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR SIGN UP WITH EMAIL</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
           <View style={styles.form}>
             <TextInput
               style={styles.input}
@@ -533,7 +513,6 @@ function SignUpScreen({ navigation }: { navigation: any }) {
               </Text>
             </TouchableOpacity>
 
-            {/* ✅ 로딩 상태 추가된 버튼 */}
             <TouchableOpacity
               style={[
                 styles.submitBtn,
@@ -569,7 +548,6 @@ function SignUpScreen({ navigation }: { navigation: any }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Privacy Policy Modal */}
       <Modal
         visible={privacyModalVisible}
         animationType="slide"
@@ -646,56 +624,6 @@ const styles = StyleSheet.create({
     paddingTop: height < 700 ? 80 : 100,
     paddingBottom: 40,
     justifyContent: "flex-start",
-  },
-  socialButtons: {
-    marginBottom: 5,
-    marginTop: 0,
-  },
-  googleBtn: {
-    backgroundColor: "#2a2a2a",
-    borderColor: "#444",
-    borderWidth: 1,
-    borderRadius: 25,
-    width: "100%",
-    paddingVertical: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    minHeight: 44,
-    shadowColor: "#2a2a2a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  socialBtnText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 14,
-    textTransform: "uppercase",
-  },
-  socialIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: "contain",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: height < 700 ? 20 : 30,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#333",
-    width: width < 480 ? 80 : 100,
-  },
-  dividerText: {
-    fontSize: 12,
-    color: "#888",
-    marginHorizontal: 15,
-    textAlign: "center",
   },
   form: {
     width: "100%",

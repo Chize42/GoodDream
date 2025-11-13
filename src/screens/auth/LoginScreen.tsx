@@ -5,7 +5,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import {
   Alert,
   Dimensions,
-  Image,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -16,7 +15,6 @@ import {
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
-const googleImage = require("../../../assets/google.png");
 
 function LoginScreen({ navigation }: { navigation: any }) {
   const [email, setEmail] = useState("");
@@ -81,17 +79,6 @@ function LoginScreen({ navigation }: { navigation: any }) {
       </View>
 
       <View style={styles.content}>
-        <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8}>
-          <Image source={googleImage} style={styles.socialIcon} />
-          <Text style={styles.socialBtnText}>CONTINUE WITH GOOGLE</Text>
-        </TouchableOpacity>
-
-        <View style={styles.dividerContainer}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR LOG IN WITH EMAIL</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
         <TextInput
           style={styles.input}
           placeholder="Email address"
@@ -117,7 +104,7 @@ function LoginScreen({ navigation }: { navigation: any }) {
           style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
           activeOpacity={0.8}
           onPress={() => {
-            console.log("🔵 버튼 클릭됨!"); // ✅ 추가
+            console.log("🔵 버튼 클릭됨!");
             handleLogin();
           }}
           disabled={loading}
@@ -182,52 +169,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: height < 700 ? 60 : 80,
     paddingBottom: 20,
-  },
-  googleBtn: {
-    backgroundColor: "#2a2a2a",
-    borderColor: "#444",
-    borderWidth: 1,
-    borderRadius: 25,
-    width: "100%",
-    paddingVertical: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    minHeight: 44,
-    shadowColor: "#2a2a2a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
-    marginBottom: 12,
-  },
-  socialBtnText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  socialIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: "contain",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 10,
-    paddingTop: 25,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#333",
-  },
-  dividerText: {
-    fontSize: 12,
-    color: "#999",
-    marginHorizontal: 15,
-    textAlign: "center",
   },
   input: {
     width: "100%",

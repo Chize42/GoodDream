@@ -80,9 +80,8 @@ export default function CustomerScreen({ navigation }) {
             >
               <Ionicons 
                 name="help-circle-outline" 
-                size={24} // styles.faqIcon의 width/height 값으로 조절
-                color="#fff" // styles.faqIcon의 tintColor 값으로 조절
-                // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
+                size={24}
+                color="#fff"
             />
               <Text style={styles.faqQuestion}>{item.question}</Text>
             </TouchableOpacity>
@@ -100,9 +99,8 @@ export default function CustomerScreen({ navigation }) {
             <Text style={styles.menuText}>서비스 이용 문의</Text>
             <Ionicons 
               name="chevron-forward" 
-              size={20} // styles.menuArrowIcon의 width/height 값으로 조절
-              color="#aaa" // styles.menuArrowIcon의 tintColor 값으로 조절
-              // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
+              size={20}
+              color="#aaa"
             />
           </TouchableOpacity>
           
@@ -114,24 +112,9 @@ export default function CustomerScreen({ navigation }) {
             <Text style={styles.menuText}>문의 내역</Text>
           <Ionicons 
             name="chevron-forward" 
-            size={20} // styles.menuArrowIcon의 width/height 값으로 조절
-            color="#aaa" // styles.menuArrowIcon의 tintColor 값으로 조절
-            // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
+            size={20}
+            color="#aaa"
           />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuRow}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate("광고 문의")}
-          >
-            <Text style={styles.menuText}>광고 문의</Text>
-            <Ionicons 
-              name="chevron-forward" 
-              size={20} // styles.menuArrowIcon의 width/height 값으로 조절
-              color="#aaa" // styles.menuArrowIcon의 tintColor 값으로 조절
-              // style={...} // margin 등 레이아웃 스타일이 있었다면 여기에 적용
-            />
           </TouchableOpacity>
         </View>
         

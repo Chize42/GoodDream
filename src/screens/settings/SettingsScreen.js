@@ -20,32 +20,29 @@ import { db } from "../../services/firebase";
 
 const menuIcons = {
   "계정 센터": "person-outline",
-  "알림": "notifications-outline", // 'Outline.png' -> '알림'에 맞는 아이콘
-  "계정 연동": "link-outline", // 'Outline.png' -> '계정 연동'에 맞는 아이콘
-  "고객센터": "help-circle-outline", // 'stash-question.png'
+  "알림": "notifications-outline",
+  "고객센터": "help-circle-outline",
 };
 
 const MenuItem = ({ iconName, text, onPress, iconComponent }) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress}>
     {iconComponent ? (
-      iconComponent // 1. Health Connect 같은 커스텀 컴포넌트 우선
+      iconComponent
     ) : iconName ? (
-      // 2. iconName이 있으면 Ionicons 렌더링
       <Ionicons
         name={iconName}
-        size={20} // styles.menuIcon의 width/height
-        color="#fff" // styles.menuIcon의 tintColor
-        style={{ marginRight: 10 }} // styles.menuIcon의 marginRight
+        size={20}
+        color="#fff"
+        style={{ marginRight: 10 }}
       />
     ) : null}
     <Text style={styles.menuText}>{text}</Text>
     
-    {/* 3. 오른쪽 화살표 Image를 Ionicons로 변경 */}
     <Ionicons
       name="chevron-forward"
-      size={20} // styles.arrowIcon의 width/height
-      color="#aaa" // styles.arrowIcon의 tintColor
-      style={{ marginLeft: "auto" }} // styles.arrowIcon의 marginLeft
+      size={20}
+      color="#aaa"
+      style={{ marginLeft: "auto" }}
     />
   </TouchableOpacity>
 );
@@ -95,7 +92,7 @@ export default function SettingsScreen({ navigation }) {
         },
       ]);
     } else if (menu === "Health Connect") {
-      navigation.navigate("HealthConnectSettings"); // 👈 추가
+      navigation.navigate("HealthConnectSettings");
     } else {
       navigation.navigate(menu);
     }
@@ -237,12 +234,6 @@ export default function SettingsScreen({ navigation }) {
           onPress={() => handlePress("알림")}
         />
         <MenuItem
-          text="계정 연동"
-          iconName={menuIcons["계정 연동"]} 
-          onPress={() => handlePress("계정 연동")}
-        />
-        {/* 👇 Health Connect 메뉴 */}
-        <MenuItem
           text="Health Connect"
           iconComponent={
             <Ionicons
@@ -269,7 +260,6 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
-// 스타일은 동일...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
