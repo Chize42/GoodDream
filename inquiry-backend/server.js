@@ -6,16 +6,20 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+// dotenv 로드: 환경 변수를 사용하기 위해 가장 먼저 로드합니다.
+require('dotenv').config(); 
+
 const Inquiry = require('./models/Inquiry'); // Inquiry 모델 import
 
 const app = express();
-const PORT = 3000;
-// MongoDB Atlas 클라우드 주소
-const DB_URL = 'mongodb+srv://aprililydbuser:PI0EruiDNtZYrSpH@aprilily.bmmbmax.mongodb.net/inquiryDB?retryWrites=true&w=majority&appName=Aprilily'; 
+// 환경 변수에서 PORT를 가져오고, 없으면 3000을 사용합니다.
+const PORT = process.env.PORT || 3000;
+// 🔑 MongoDB Atlas 접속 주소를 환경 변수에서 가져옵니다. (보안 강화)
+const DB_URL = process.env.MONGO_URI; 
 
 // uploads 폴더가 없으면 생성
 const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
+if (!!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
@@ -37,6 +41,7 @@ const fileFilter = (req, file, cb) => {
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
+        // MulterError 대신 일반 Error를 반환하여 에러 핸들링 미들웨어로 전달합니다.
         cb(new Error('이미지 파일만 업로드 가능합니다.'), false);
     }
 };
@@ -55,8 +60,9 @@ app.use('/uploads', express.static('uploads')); // 업로드된 파일을 정적
 
 // 데이터베이스 연결
 mongoose.connect(DB_URL)
-    .then(() => console.log('MongoDB 연결 성공 (포트 27017)'))
-    .catch(err => console.error('MongoDB 연결 실패. MongoDB가 실행 중인지 확인하세요:', err.message));
+    // 💡 로그 수정: Atlas 연결 성공 메시지로 변경
+    .then(() => console.log('✅ MongoDB Atlas 연결 성공')) 
+    .catch(err => console.error('❌ MongoDB 연결 실패. Atlas 설정 확인:', err.message));
 
 // --- API 엔드포인트 (라우트) ---
 
@@ -96,6 +102,14 @@ app.post('/api/v1/inquiries', upload.array('files', 5), async (req, res) => {
             });
         }
         
+        // Mongoose Validation Error 처리
+        if (error.name === 'ValidationError') {
+             return res.status(400).json({ 
+                message: '입력 데이터 검증 실패', 
+                error: error.message 
+            });
+        }
+        
         return res.status(400).json({ 
             message: '문의 접수 실패', 
             error: error.message 
@@ -129,6 +143,10 @@ app.get('/api/v1/inquiries/:id', async (req, res) => {
         return res.status(200).json(inquiry);
     } catch (error) {
         console.error("문의 조회 중 오류:", error);
+        // 잘못된 ID 형식 (CastError) 처리
+        if (error.name === 'CastError') {
+             return res.status(400).json({ message: '잘못된 문의 ID 형식입니다.' });
+        }
         return res.status(500).json({ message: '문의 조회 실패' });
     }
 });
@@ -174,7 +192,8 @@ app.delete('/api/v1/inquiries/:id', async (req, res) => {
         // 첨부 파일 삭제
         if (inquiry.attachments && inquiry.attachments.length > 0) {
             inquiry.attachments.forEach(filePath => {
-                const fullPath = path.join(__dirname, filePath);
+                // filePath는 /uploads/... 형식이므로 path.join으로 경로 재구성
+                const fullPath = path.join(__dirname, filePath); 
                 fs.unlink(fullPath, (err) => {
                     if (err) console.error('파일 삭제 실패:', err);
                 });
@@ -189,7 +208,7 @@ app.delete('/api/v1/inquiries/:id', async (req, res) => {
     }
 });
 
-// 에러 핸들링 미들웨어
+// 에러 핸들링 미들웨어 (Multer 에러 및 기타 에러 처리)
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -199,10 +218,17 @@ app.use((err, req, res, next) => {
             return res.status(400).json({ message: '최대 5개의 파일만 업로드 가능합니다.' });
         }
     }
-    return res.status(500).json({ message: err.message });
+    // fileFilter에서 발생한 일반 Error 처리
+    if (err.message === '이미지 파일만 업로드 가능합니다.') {
+        return res.status(400).json({ message: err.message });
+    }
+    
+    console.error(err.stack); // 서버 에러 스택 출력
+    return res.status(500).json({ message: '서버 내부 오류가 발생했습니다.' });
 });
 
 // 서버 시작
-app.listen(PORT, () => {
-    console.log(`백엔드 서버가 http://localhost:${PORT} 에서 구동 중입니다.`);
+app.listen(PORT, '0.0.0.0', () => { // 👈 0.0.0.0 추가
+    console.log(`🚀 백엔드 서버가 http://0.0.0.0:${PORT} 에서 구동 중입니다.`);
+    console.log(`앱에서 접속할 주소: http://${process.env.IP_ADDRESS || '172.20.10.2'}:${PORT}`); 
 });
