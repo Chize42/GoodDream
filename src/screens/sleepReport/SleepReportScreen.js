@@ -238,7 +238,19 @@ const SleepReportScreen = ({ navigation, route }) => {
     return `${displayHour}:${minute} ${period}`;
   };
 
-  const calculateSleepDuration = (bedTime, wakeTime) => {
+  const calculateSleepDuration = (sleepData) => {
+    // duration 필드가 있으면 그것을 사용 (누적된 실제 수면 시간)
+    if (sleepData.duration !== undefined && sleepData.duration > 0) {
+      const totalMinutes = sleepData.duration;
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `총 ${hours}시간 ${minutes}분`;
+    }
+
+    // duration이 없으면 bedTime/wakeTime으로 계산
+    const bedTime = sleepData.bedTime;
+    const wakeTime = sleepData.wakeTime;
+
     const [bedHour, bedMin] = bedTime.split(":").map(Number);
     const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
 
@@ -430,10 +442,7 @@ const SleepReportScreen = ({ navigation, route }) => {
                       { marginBottom: 0 },
                     ]}
                   >
-                    {calculateSleepDuration(
-                      currentSleepData.bedTime,
-                      currentSleepData.wakeTime
-                    )}
+                    {calculateSleepDuration(currentSleepData)}
                   </Text>
                   <TouchableOpacity onPress={() => setShowEditModal(true)}>
                     <Text style={sleepReportStyles.moreButton}>수정하기 ›</Text>
