@@ -17,13 +17,34 @@ import {
 } from "react-native";
 import WeekChart from "../../components/WeekChart";
 import { useAuth } from "../../contexts/AuthContext";
-import { useSyncContext } from "../../contexts/SyncContext"; // 👈 추가
+import { useSyncContext } from "../../contexts/SyncContext";
 
 const { width } = Dimensions.get("window");
 
+// 📱 반응형 스케일 계산
+const BASE_WIDTH = 375; // iPhone 11 Pro 기준
+const scale = width / BASE_WIDTH;
+
+// ✅ 좌우도 증가분의 70%만 적용
+const normalizeSize = (size: number) => {
+  const scaledSize = size * scale;
+  const limitedScale = size + (scaledSize - size) * 0.7; // 증가분의 70%만 적용
+  return Math.round(limitedScale);
+};
+
+// ✅ 카드 높이는 화면 너비에 비례하지만 가로보다 덜 늘어남 (70%)
+const scaleHeight = (size: number) => {
+  const scaledSize = size * scale;
+  const limitedScale = size + (scaledSize - size) * 0.7; // 증가분의 70%만 적용
+  return Math.round(limitedScale);
+};
+
+// 태블릿 여부 판단
+const isTablet = width >= 768;
+
 function HomeScreen({ navigation }: { navigation: any }) {
   const { user } = useAuth();
-  const { syncData, isSyncing } = useSyncContext(); // 👈 추가
+  const { syncData, isSyncing } = useSyncContext();
   const [username, setUsername] = useState("사용자");
   const [loading, setLoading] = useState(true);
   const [weekData, setWeekData] = useState([]);
@@ -91,17 +112,16 @@ function HomeScreen({ navigation }: { navigation: any }) {
     }
   };
 
-  // 👇 빠른 동기화 핸들러 추가
+  // 빠른 동기화 핸들러
   const handleQuickSync = async () => {
     try {
-      const result = await syncData(7); // 최근 7일 동기화
+      const result = await syncData(7);
 
       if (result.success) {
         Alert.alert(
           "동기화 완료",
           `${result.syncedCount}개의 데이터를 가져왔습니다.`
         );
-        // 주간 데이터 다시 로드
         await fetchWeekSleepData();
       } else {
         Alert.alert(
@@ -204,17 +224,14 @@ function HomeScreen({ navigation }: { navigation: any }) {
               style={styles.editButton}
               onPress={() => navigation.navigate("Settings")}
             >
-              <Feather name="edit-2" size={14} color="#2E4A7D" />
+              <Feather name="edit-2" size={normalizeSize(14)} color="#2E4A7D" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 👇 기존 동기화 버튼 제거 */}
-
         <View style={styles.weekly}>
           <Text style={styles.weeklyText}>weekly report</Text>
           <View style={styles.headerActions}>
-            {/* 👇 동기화 아이콘 버튼 추가 */}
             <TouchableOpacity
               onPress={handleQuickSync}
               disabled={isSyncing}
@@ -223,11 +240,14 @@ function HomeScreen({ navigation }: { navigation: any }) {
               {isSyncing ? (
                 <ActivityIndicator size="small" color="#4074D8" />
               ) : (
-                <Ionicons name="sync-outline" size={18} color="#4074D8" />
+                <Ionicons
+                  name="sync-outline"
+                  size={normalizeSize(18)}
+                  color="#4074D8"
+                />
               )}
             </TouchableOpacity>
 
-            {/* 더보기 버튼 */}
             <TouchableOpacity
               style={styles.seeMoreButton}
               onPress={() => {
@@ -236,7 +256,11 @@ function HomeScreen({ navigation }: { navigation: any }) {
               }}
             >
               <Text style={styles.seeMoreText}>더보기</Text>
-              <Ionicons name="chevron-forward" size={20} color="#fff" />
+              <Ionicons
+                name="chevron-forward"
+                size={normalizeSize(20)}
+                color="#fff"
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -301,9 +325,11 @@ function HomeScreen({ navigation }: { navigation: any }) {
 
         <TouchableOpacity
           style={styles.startSleepingBtn}
-          onPress={() => navigation.navigate("Play", {
-            startTime: new Date().toISOString(),
-          })}
+          onPress={() =>
+            navigation.navigate("Play", {
+              startTime: new Date().toISOString(),
+            })
+          }
         >
           <Image
             source={require("../../../assets/moon.png")}
@@ -325,48 +351,48 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     alignItems: "center",
-    paddingVertical: 5,
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingVertical: normalizeSize(5),
+    paddingHorizontal: normalizeSize(20),
+    paddingTop: normalizeSize(20),
+    paddingBottom: normalizeSize(40), // ✅ 하단 패딩 추가
   },
   homeContent: {
     width: "100%",
-    maxWidth: 400,
   },
   homeHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: normalizeSize(20),
   },
   dateText: {
-    fontSize: 17,
+    fontSize: normalizeSize(17),
     color: "#aaa",
     marginTop: 0,
-    marginBottom: 4,
+    marginBottom: normalizeSize(4),
   },
   welcomeText: {
-    fontSize: 25,
+    fontSize: normalizeSize(25),
     fontWeight: "bold",
     color: "white",
-    marginBottom: 4,
+    marginBottom: normalizeSize(4),
   },
   profileWrapper: {
     position: "relative",
-    width: 60,
-    height: 60,
+    width: normalizeSize(60),
+    height: normalizeSize(60),
   },
   profileCircle: {
     backgroundColor: "#2E4A7D",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: normalizeSize(60),
+    height: normalizeSize(60),
+    borderRadius: normalizeSize(30),
     justifyContent: "center",
     alignItems: "center",
   },
   profileImg: {
-    width: 40,
-    height: 40,
+    width: normalizeSize(40),
+    height: normalizeSize(40),
     resizeMode: "contain",
   },
   editButton: {
@@ -374,8 +400,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     backgroundColor: "white",
-    borderRadius: 12,
-    padding: 3,
+    borderRadius: normalizeSize(12),
+    padding: normalizeSize(3),
     elevation: 3,
     shadowColor: "#000",
     shadowOpacity: 0.2,
@@ -386,25 +412,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: normalizeSize(10),
   },
   weeklyText: {
-    fontSize: 18,
+    fontSize: normalizeSize(18),
     color: "white",
   },
-  // 👇 헤더 액션 컨테이너 추가
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: normalizeSize(12),
   },
-  // 👇 동기화 아이콘 버튼 스타일 추가
   syncIconButton: {
-    width: 28,
-    height: 28,
+    width: normalizeSize(28),
+    height: normalizeSize(28),
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 14,
+    borderRadius: normalizeSize(14),
     backgroundColor: "rgba(64, 116, 216, 0.15)",
   },
   seeMoreButton: {
@@ -412,37 +436,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   seeMoreText: {
-    marginRight: 4,
+    marginRight: normalizeSize(4),
     color: "#aaa",
+    fontSize: normalizeSize(14),
   },
   chartBox: {
     backgroundColor: "#1D1B20",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    minHeight: 200,
+    borderRadius: normalizeSize(12),
+    paddingHorizontal: normalizeSize(24), // ✅ 가로 패딩 증가
+    paddingVertical: normalizeSize(20), // ✅ 세로 패딩
+    marginBottom: normalizeSize(20),
+    minHeight: scaleHeight(240), // ✅ 높이 증가
+    justifyContent: "flex-end", // ✅ 차트를 아래로 정렬
   },
   cardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: normalizeSize(20),
+    gap: normalizeSize(12), // ✅ 카드 사이 간격 추가
   },
   bigCard: {
     flex: 1,
-    borderRadius: 16,
-    padding: 12,
-    height: 200,
-    marginRight: 10,
+    borderRadius: normalizeSize(16),
+    padding: normalizeSize(12),
+    height: scaleHeight(200), // ✅ 화면 비율에 맞춰 높이 조정
   },
   smallCardColumn: {
     flex: 1,
     justifyContent: "space-between",
   },
   smallCard: {
-    borderRadius: 16,
-    padding: 12,
-    height: 95,
-    marginBottom: 10,
+    borderRadius: normalizeSize(16),
+    padding: normalizeSize(12),
+    height: scaleHeight(95), // ✅ 화면 비율에 맞춰 높이 조정
+    marginBottom: normalizeSize(10),
   },
   purple: {
     backgroundColor: "#7593CE",
@@ -454,105 +481,107 @@ const styles = StyleSheet.create({
     backgroundColor: "#263A54",
   },
   cardIllustration: {
-    width: 77,
-    height: 77,
+    width: normalizeSize(77),
+    height: normalizeSize(77),
     position: "absolute",
-    top: 16,
-    right: 16,
+    top: normalizeSize(16),
+    right: normalizeSize(16),
   },
   soundIllustration: {
-    width: 60,
-    height: 60,
+    width: normalizeSize(60),
+    height: normalizeSize(60),
     position: "absolute",
-    top: 15,
-    right: 9,
+    top: normalizeSize(15),
+    right: normalizeSize(9),
   },
   bubbleIllustration: {
-    width: 50,
-    height: 50,
+    width: normalizeSize(50),
+    height: normalizeSize(50),
     position: "absolute",
-    top: 20,
-    right: 16,
+    top: normalizeSize(20),
+    right: normalizeSize(16),
   },
   cardTitle: {
     fontWeight: "bold",
-    fontSize: 20,
+    fontSize: normalizeSize(20),
     color: "white",
     position: "absolute",
-    bottom: 45,
-    left: 20,
+    bottom: normalizeSize(45),
+    left: normalizeSize(20),
   },
   cardTitleT: {
     fontWeight: "bold",
-    fontSize: 20,
+    fontSize: normalizeSize(20),
     color: "#3F414E",
     position: "absolute",
-    bottom: 45,
-    left: 20,
+    bottom: normalizeSize(45),
+    left: normalizeSize(20),
   },
   cardSubtitle: {
-    fontSize: 10,
+    fontSize: normalizeSize(10),
     color: "white",
     position: "absolute",
-    bottom: 27,
-    left: 20,
+    bottom: normalizeSize(27),
+    left: normalizeSize(20),
   },
   cardSubtitleT: {
-    fontSize: 10,
+    fontSize: normalizeSize(10),
     color: "#524F53",
     position: "absolute",
-    bottom: 27,
-    left: 20,
+    bottom: normalizeSize(27),
+    left: normalizeSize(20),
   },
   challengeBox: {
     backgroundColor: "#333242",
-    borderRadius: 16,
-    padding: 10,
+    borderRadius: normalizeSize(16),
+    padding: normalizeSize(10),
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
-    paddingLeft: 70,
-    gap: 110,
+    marginBottom: normalizeSize(20),
+    paddingLeft: normalizeSize(70),
+    gap: normalizeSize(110),
+    minHeight: scaleHeight(100), // ✅ 최소 높이 추가
   },
   challengeOwl: {
-    width: 77,
-    height: 77,
+    width: normalizeSize(77),
+    height: normalizeSize(77),
   },
   challengeTexts: {
     flex: 1,
   },
   challengeTitle: {
-    fontSize: 20,
+    fontSize: normalizeSize(20),
     fontWeight: "bold",
     color: "white",
-    right: 25,
+    right: normalizeSize(25),
   },
   challengeSubtitle: {
-    fontSize: 11,
+    fontSize: normalizeSize(11),
     color: "#ccc",
-    marginTop: 10,
+    marginTop: normalizeSize(10),
     fontWeight: "bold",
-    right: 25,
+    right: normalizeSize(25),
   },
   startSleepingBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#3f78ff",
-    borderRadius: 30,
-    paddingVertical: 15,
-    paddingHorizontal: 30,
+    borderRadius: normalizeSize(30),
+    paddingVertical: scaleHeight(15), // ✅ 화면 비율에 맞춰 패딩 조정
+    paddingHorizontal: normalizeSize(30),
     alignSelf: "center",
-    gap: 8,
+    gap: normalizeSize(8),
+    minHeight: scaleHeight(50), // ✅ 최소 높이 추가
   },
   sleepingIcon: {
-    width: 18,
-    height: 18,
+    width: normalizeSize(18),
+    height: normalizeSize(18),
   },
   startSleepingText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 14,
+    fontSize: normalizeSize(14),
   },
 });
 
