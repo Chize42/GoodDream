@@ -303,7 +303,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
                 source={require("../../../assets/bubble.png")}
                 style={styles.bubbleIllustration}
               />
-              <Text style={styles.cardTitle}>버블</Text>
+              <Text style={styles.cardTitle}>고민방울</Text>
               <Text style={styles.cardSubtitle}>BUBBLE</Text>
             </TouchableOpacity>
           </View>
