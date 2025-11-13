@@ -1,7 +1,17 @@
 // src/components/CustomCalendar.js
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+
+const { width } = Dimensions.get("window");
+const CALENDAR_PADDING = 24; // 좌우 패딩 합계
+const DAY_SIZE = Math.min((width - CALENDAR_PADDING) / 7, 50); // 최대 50으로 제한
 
 const CustomCalendar = ({
   selectedDate,
@@ -304,10 +314,10 @@ const CustomCalendar = ({
                     <View
                       style={[
                         styles.dayContainer,
-                        day.hasSleepData &&
-                          day.isSelected &&
-                          styles.selectedDay,
-                        day.isToday && !day.isSelected && styles.todayDay,
+                        // ✅ 선택된 날짜는 데이터 유무와 관계없이 파란 배경
+                        day.isSelected && styles.selectedDay,
+                        // ✅ 오늘 날짜는 항상 테두리 표시 (선택되어도)
+                        day.isToday && styles.todayDay,
                       ]}
                     >
                       <Text
@@ -319,12 +329,11 @@ const CustomCalendar = ({
                           day.hasSleepData &&
                             !day.isSelected &&
                             !day.isToday &&
-                            styles.hasSleepDataText, // 👈 이거만 추가
+                            styles.hasSleepDataText,
                         ]}
                       >
                         {day.date}
                       </Text>
-                      {/* 👇 작은 점 제거 */}
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -336,6 +345,7 @@ const CustomCalendar = ({
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
@@ -395,9 +405,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dayContainer: {
-    width: 34,
-    height: 34, // 👈 33 → 32로 변경 (정사각형)
-    borderRadius: 16,
+    // ✅ 반응형 크기 적용 (화면 크기에 따라 자동 조정)
+    width: DAY_SIZE * 0.85,
+    height: DAY_SIZE * 0.85,
+    borderRadius: 999, // ✅ 큰 값으로 완전한 원 만들기
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
@@ -407,22 +418,17 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   selectedDay: {
-    borderRadius: 16,
     backgroundColor: "#4074D8",
-    width: 32,
-    height: 32,
+    borderRadius: 999, // ✅ 동그라미 유지
   },
   todayDay: {
-    borderWidth: 1,
-    borderRadius: 16,
+    borderWidth: 2,
     borderColor: "#4074D8",
-    backgroundColor: "transparent",
-    width: 32,
-    height: 32,
+    borderRadius: 999, // ✅ 동그라미 유지
   },
   dayText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: Math.min(DAY_SIZE * 0.35, 16), // ✅ 글자 크기도 반응형
     textAlign: "center",
   },
   otherMonthText: {
