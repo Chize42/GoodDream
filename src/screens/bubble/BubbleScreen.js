@@ -28,7 +28,7 @@ export default function BubbleScreen({ navigation }) {
   const [bubbles, setBubbles] = useState([
     {
       id: "initial-bubble",
-      text: "오늘 하루\n수고 많으셨어요\n좋은밤 되세요",
+      text: "고민은\n비눗방울처럼\n사라질 거예요",
       size: 250,
       position: {
         top: screenHeight / 2 - 175,
@@ -120,9 +120,7 @@ export default function BubbleScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate("Home")}
-        >
+        <TouchableOpacity onPress={() => navigation.navigate("Home")}>
           <Ionicons name="chevron-back" size={24} color="#fff" marginTop={30} />
         </TouchableOpacity>
       </View>
