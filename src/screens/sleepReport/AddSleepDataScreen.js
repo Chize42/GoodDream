@@ -106,7 +106,7 @@ const AddSleepDataScreen = ({ navigation, route }) => {
     }
   };
 
-  // 👇 수면 시간(분) 계산 함수 추가
+  // 수면 시간(분) 계산 함수
   const calculateSleepDurationMinutes = () => {
     try {
       const [bedHour, bedMin] = bedTime.split(":").map(Number);
@@ -143,7 +143,7 @@ const AddSleepDataScreen = ({ navigation, route }) => {
     }
   };
 
-  // 👇 수면 점수 자동 계산 함수
+  // 수면 점수 자동 계산 함수
   const calculateSleepScore = (durationMinutes) => {
     const sleepHours = durationMinutes / 60;
     let score = 0;
@@ -177,6 +177,16 @@ const AddSleepDataScreen = ({ navigation, route }) => {
     return Math.min(100, Math.max(0, score));
   };
 
+  // ✅ 데이터 존재 여부를 정확히 체크하는 함수
+  const hasValidSleepData = (data) => {
+    if (!data) return false;
+    if (typeof data !== "object") return false;
+    if (Object.keys(data).length === 0) return false;
+
+    // bedTime과 wakeTime이 모두 있어야 유효한 데이터로 간주
+    return !!(data.bedTime && data.wakeTime);
+  };
+
   // 데이터 저장 함수
   const handleSaveSleepData = async () => {
     try {
@@ -187,9 +197,25 @@ const AddSleepDataScreen = ({ navigation, route }) => {
 
       setLoading(true);
 
-      const existingData = await getSleepData(user.uid, selectedDate);
+      console.log("데이터 확인 중:", { userId: user.uid, date: selectedDate });
 
-      if (existingData) {
+      // ✅ getSleepData는 { success, data } 형태로 반환
+      const result = await getSleepData(user.uid, selectedDate);
+
+      console.log("가져온 결과:", result);
+
+      // ✅ result.data로 접근
+      const existingData = result?.data;
+
+      console.log("실제 데이터:", existingData);
+      console.log("데이터 타입:", typeof existingData);
+      console.log(
+        "데이터 키:",
+        existingData ? Object.keys(existingData) : "없음"
+      );
+
+      // ✅ 유효한 데이터가 있는지 정확히 체크
+      if (hasValidSleepData(existingData)) {
         setLoading(false);
         Alert.alert(
           "(주의) 기존 데이터가 존재합니다",
@@ -206,6 +232,7 @@ const AddSleepDataScreen = ({ navigation, route }) => {
           ]
         );
       } else {
+        console.log("새 데이터 저장 시작");
         await saveData();
       }
     } catch (error) {
@@ -225,20 +252,26 @@ const AddSleepDataScreen = ({ navigation, route }) => {
 
       setLoading(true);
 
-      // 👇 수면 시간만 저장 (점수는 저장하지 않음)
       const durationMinutes = calculateSleepDurationMinutes();
 
+      // ✅ saveSleepData는 (userId, sleepData) 형태로 호출
+      // date를 sleepData 안에 포함
       const basicSleepData = {
+        date: selectedDate, // ✅ date 필드 추가
         bedTime,
         wakeTime,
-        duration: durationMinutes, // 👈 분 단위로 저장
-        // score는 저장하지 않음 - CircularProgress에서 자동 계산됨
+        duration: durationMinutes,
         isManualEntry: true,
         source: "manual",
         lastModified: new Date().toISOString(),
       };
 
-      await saveSleepData(user.uid, selectedDate, basicSleepData);
+      console.log("저장할 데이터:", basicSleepData);
+
+      // ✅ (userId, sleepData) 형태로 호출
+      await saveSleepData(user.uid, basicSleepData);
+
+      console.log("저장 완료!");
 
       Alert.alert("저장 완료!", "수면 데이터가 성공적으로 저장되었습니다.", [
         {
@@ -258,7 +291,7 @@ const AddSleepDataScreen = ({ navigation, route }) => {
       ]);
     } catch (error) {
       console.error("수면 데이터 저장 오류:", error);
-      Alert.alert("오류", "수면 데이터 저장에 실패했습니다.");
+      Alert.alert("오류", `수면 데이터 저장에 실패했습니다.\n${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -343,7 +376,7 @@ const AddSleepDataScreen = ({ navigation, route }) => {
             <Text style={styles.durationText}>{calculateSleepDuration()}</Text>
           </View>
 
-          {/* 👇 예상 수면 점수 표시 추가 */}
+          {/* 예상 수면 점수 표시 */}
           <View style={[styles.durationContainer, { marginTop: spacing.md }]}>
             <Text style={styles.durationLabel}>예상 수면 점수</Text>
             <Text style={styles.durationText}>
