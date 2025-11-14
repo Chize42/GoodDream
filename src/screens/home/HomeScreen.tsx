@@ -32,6 +32,15 @@ const normalizeSize = (size: number) => {
   return Math.round(limitedScale);
 };
 
+// ✅ 카드 텍스트는 작은 화면에서 더 작게
+const normalizeCardText = (size: number) => {
+  if (width < 375) {
+    // 작은 화면에서는 90% 크기로
+    return Math.round(size * 0.9);
+  }
+  return normalizeSize(size);
+};
+
 // ✅ 카드 높이는 화면 너비에 비례하지만 가로보다 덜 늘어남 (70%)
 const scaleHeight = (size: number) => {
   const scaledSize = size * scale;
@@ -278,7 +287,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
               source={require("../../../assets/alramOwl.png")}
               style={styles.cardIllustration}
             />
-            <Text style={styles.cardTitle}>스케쥴 설정</Text>
+            <Text style={styles.cardTitle}>스케줄 설정</Text>
             <Text style={styles.cardSubtitle}>SCHEDULE</Text>
           </TouchableOpacity>
 
@@ -503,7 +512,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontWeight: "bold",
-    fontSize: normalizeSize(20),
+    fontSize: normalizeCardText(20), // ✅ 작은 화면에서 줄어듦
     color: "white",
     position: "absolute",
     bottom: normalizeSize(45),
@@ -511,21 +520,21 @@ const styles = StyleSheet.create({
   },
   cardTitleT: {
     fontWeight: "bold",
-    fontSize: normalizeSize(20),
+    fontSize: normalizeCardText(20), // ✅ 작은 화면에서 줄어듦
     color: "#3F414E",
     position: "absolute",
     bottom: normalizeSize(45),
     left: normalizeSize(20),
   },
   cardSubtitle: {
-    fontSize: normalizeSize(10),
+    fontSize: normalizeCardText(10), // ✅ 작은 화면에서 줄어듦
     color: "white",
     position: "absolute",
     bottom: normalizeSize(27),
     left: normalizeSize(20),
   },
   cardSubtitleT: {
-    fontSize: normalizeSize(10),
+    fontSize: normalizeCardText(10), // ✅ 작은 화면에서 줄어듦
     color: "#524F53",
     position: "absolute",
     bottom: normalizeSize(27),
@@ -550,13 +559,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   challengeTitle: {
-    fontSize: normalizeSize(20),
+    fontSize: normalizeCardText(20), // ✅ 작은 화면에서 줄어듦
     fontWeight: "bold",
     color: "white",
     right: normalizeSize(25),
   },
   challengeSubtitle: {
-    fontSize: normalizeSize(11),
+    fontSize: normalizeCardText(11), // ✅ 작은 화면에서 줄어듦
     color: "#ccc",
     marginTop: normalizeSize(10),
     fontWeight: "bold",
