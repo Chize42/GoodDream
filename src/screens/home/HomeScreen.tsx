@@ -1,4 +1,3 @@
-// src/screens/HomeScreen.tsx
 import { Feather, Ionicons } from "@expo/vector-icons";
 import React, { useState, useEffect } from "react";
 import { auth, db } from "../../services/firebase";
@@ -188,7 +187,8 @@ function HomeScreen({ navigation }: { navigation: any }) {
           { justifyContent: "center", alignItems: "center" },
         ]}
       >
-        <Text style={{ color: "white" }}>로딩 중...</Text>
+        <ActivityIndicator size="large" color="white" />
+        <Text style={{ color: "white", marginTop: 10 }}>로딩 중...</Text>
       </View>
     );
   }
@@ -268,7 +268,8 @@ function HomeScreen({ navigation }: { navigation: any }) {
         <View style={styles.chartBox}>
           <WeekChart weekData={weekData} />
         </View>
-
+        
+        {/* 💡 1. 스케줄 설정 카드는 cardRow 위치에 그대로 유지 */}
         <View style={styles.cardRow}>
           <TouchableOpacity
             style={[styles.bigCard, styles.purple]}
@@ -308,10 +309,29 @@ function HomeScreen({ navigation }: { navigation: any }) {
             </TouchableOpacity>
           </View>
         </View>
+        {/* 💡 cardRow 영역 끝 */}
 
+
+        {/* 💡 2. 꿈 일기 AI 분석 카드를 challengeBox 스타일로 배치 (챌린지 카드 위) */}
         <TouchableOpacity
-          style={styles.challengeBox}
-          onPress={() => navigation.navigate("Challenge")}
+          style={[styles.challengeBox, styles.dreamAIBox]} 
+          onPress={() => navigation.navigate("DreamInput")} // DreamInput 페이지로 이동
+        >
+          <Image
+            source={require("../../../assets/images/dream.png")}
+            style={styles.dreamAICardIllustration}
+          />
+          <View style={styles.challengeTexts}>
+            <Text style={[styles.dreamAITitle, styles.AI_TEXT_COLOR]}>꿈 속 마음 읽기</Text>
+            <Text style={[styles.dreamAISubtitle, styles.AI_TEXT_COLOR]}>AI ANALYSIS</Text>
+          </View>
+        </TouchableOpacity>
+        {/* 💡 AI 분석 카드 배치 끝 */}
+        
+        {/* 💡 3. 챌린지 카드를 원래 위치 (AI 분석 카드 아래)에 배치 */}
+        <TouchableOpacity
+          style={styles.challengeBox} 
+          onPress={() => navigation.navigate("Challenge")} // Challenge 페이지로 이동
         >
           <Image
             source={require("../../../assets/challengeOwl.png")}
@@ -322,6 +342,8 @@ function HomeScreen({ navigation }: { navigation: any }) {
             <Text style={styles.challengeSubtitle}>CHALLENGE</Text>
           </View>
         </TouchableOpacity>
+        {/* 💡 챌린지 카드 배치 끝 */}
+
 
         <TouchableOpacity
           style={styles.startSleepingBtn}
@@ -480,6 +502,19 @@ const styles = StyleSheet.create({
   blue: {
     backgroundColor: "#263A54",
   },
+  // 💡 AI 분석 카드 스타일 (새로 정의 - 챌린지 디자인 재활용)
+  dreamAIBox: {
+    backgroundColor: "#b79ed8ff", // 밝은 보라색
+  },
+  AI_TEXT_COLOR: {
+    color: '#3F414E', // 어두운 텍스트 색상
+  },
+  dreamAIIllustration: {
+    // 챌린지 Owl과 비슷한 크기로 조정
+    width: normalizeSize(77),
+    height: normalizeSize(77),
+    // 위치를 좌측으로 맞추기 위해 절대 위치 대신 일반 이미지로 처리
+  },
   cardIllustration: {
     width: normalizeSize(77),
     height: normalizeSize(77),
@@ -546,6 +581,13 @@ const styles = StyleSheet.create({
     width: normalizeSize(77),
     height: normalizeSize(77),
   },
+  dreamAICardIllustration: { // 💡 챌린지 올빼미와 비슷하게 배치되도록 스타일 조정
+    width: normalizeSize(77),
+    height: normalizeSize(77),
+    position: "absolute", // 챌린지 박스와 유사한 방식으로 배치
+    left: normalizeSize(10),
+    top: normalizeSize(10),
+  },
   challengeTexts: {
     flex: 1,
   },
@@ -560,6 +602,20 @@ const styles = StyleSheet.create({
     color: "#ccc",
     marginTop: normalizeSize(10),
     fontWeight: "bold",
+    right: normalizeSize(25),
+  },
+  // 💡 AI 분석 카드 전용 텍스트 스타일
+  dreamAITitle: {
+    fontSize: normalizeSize(20),
+    fontWeight: "bold",
+    textAlign: "right",
+    right: normalizeSize(25),
+  },
+  dreamAISubtitle: {
+    fontSize: normalizeSize(11),
+    marginTop: normalizeSize(10),
+    fontWeight: "bold",
+    textAlign: "right",
     right: normalizeSize(25),
   },
   startSleepingBtn: {

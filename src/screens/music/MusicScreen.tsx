@@ -129,7 +129,7 @@ const soundData: SoundItem[] = [
   },
   {
     id: "10",
-    title: "드뷔치 - 달빛",
+    title: "드뷔시 - 달빛",
     subtitle: "클래식",
     category: "클래식",
     image: debussy,
