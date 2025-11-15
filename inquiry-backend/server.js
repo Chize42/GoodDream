@@ -1,11 +1,14 @@
-// server.js
-
+// 필요한 라이브러리 가져오기
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+
+// 💡 AI 기능 추가: Google Cloud Natural Language 클라이언트 라이브러리 (Mocking 시에는 주석 처리)
+// const { LanguageServiceClient } = require('@google-cloud/language');
+
 // dotenv 로드: 환경 변수를 사용하기 위해 가장 먼저 로드합니다.
 require('dotenv').config(); 
 
@@ -13,13 +16,13 @@ const Inquiry = require('./models/Inquiry'); // Inquiry 모델 import
 
 const app = express();
 // 환경 변수에서 PORT를 가져오고, 없으면 3000을 사용합니다.
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // 3000번 포트 유지
 // 🔑 MongoDB Atlas 접속 주소를 환경 변수에서 가져옵니다. (보안 강화)
 const DB_URL = process.env.MONGO_URI; 
 
 // uploads 폴더가 없으면 생성
 const uploadDir = path.join(__dirname, 'uploads');
-if (!!fs.existsSync(uploadDir)) {
+if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
@@ -58,9 +61,11 @@ app.use(cors()); // CORS 활성화
 app.use(express.json()); // JSON 요청 본문 파싱
 app.use('/uploads', express.static('uploads')); // 업로드된 파일을 정적 파일로 제공
 
+// 💡 AI 기능: Natural Language 클라이언트 초기화 (Mocking 시 주석 처리)
+// const languageClient = new LanguageServiceClient(); 
+
 // 데이터베이스 연결
 mongoose.connect(DB_URL)
-    // 💡 로그 수정: Atlas 연결 성공 메시지로 변경
     .then(() => console.log('✅ MongoDB Atlas 연결 성공')) 
     .catch(err => console.error('❌ MongoDB 연결 실패. Atlas 설정 확인:', err.message));
 
@@ -105,9 +110,9 @@ app.post('/api/v1/inquiries', upload.array('files', 5), async (req, res) => {
         // Mongoose Validation Error 처리
         if (error.name === 'ValidationError') {
              return res.status(400).json({ 
-                message: '입력 데이터 검증 실패', 
-                error: error.message 
-            });
+                 message: '입력 데이터 검증 실패', 
+                 error: error.message 
+             });
         }
         
         return res.status(400).json({ 
@@ -208,6 +213,48 @@ app.delete('/api/v1/inquiries/:id', async (req, res) => {
     }
 });
 
+// 6. [POST] 💡 AI 기능 Mocking 엔드포인트 (시연 보장용)
+app.post('/api/analyze-dream', async (req, res) => {
+    const dreamText = req.body.dreamText || ""; 
+
+    let sentimentStatus = '중립적';
+    let keywords = ['수면', '기록', '꿈'];
+    let score = 0.0;
+
+    // 💡 Mocking 로직 확장
+    if (dreamText.includes('행복') || dreamText.includes('좋은') || dreamText.includes('기쁨')) {
+        sentimentStatus = '긍정적';
+        keywords = ['행복', '즐거움', '편안함', '밝음', '성공'];
+        score = Math.min(0.9, dreamText.length / 50); // 길이 기반 점수 (최대 0.9)
+    } else if (dreamText.includes('무서') || dreamText.includes('슬퍼') || dreamText.includes('두려')) {
+        sentimentStatus = '부정적';
+        keywords = ['불안', '두려움', '스트레스', '어둠', '추격'];
+        score = Math.max(-0.8, -dreamText.length / 50); // 길이 기반 음수 점수 (최소 -0.8)
+    } else if (dreamText.includes('평화') || dreamText.includes('잔잔') || dreamText.includes('익숙')) {
+        sentimentStatus = '중립적';
+        keywords = ['일상', '잔잔함', '평화', '기억'];
+        score = Math.min(0.2, dreamText.length / 100); // 0.0 근처의 낮은 점수
+    } else if (dreamText.includes('이상') || dreamText.includes('혼란') || dreamText.includes('복잡')) {
+        sentimentStatus = '혼란'; // 임시 상태
+        keywords = ['미스터리', '혼란', '복잡', '질문'];
+        score = 0.05; 
+    } else {
+        // 기본 중립
+        score = 0.1;
+    }
+
+    // 💡 지연 코드 제거: 즉시 응답하여 앱의 타임아웃 문제를 해결합니다.
+
+    return res.json({
+        sentimentScore: score, 
+        sentimentMagnitude: 0.8, // 강도는 일정하게 유지
+        sentimentStatus: sentimentStatus,
+        keywords: keywords,
+        message: "AI 분석 (Mock)이 성공적으로 완료되었습니다."
+    });
+});
+
+
 // 에러 핸들링 미들웨어 (Multer 에러 및 기타 에러 처리)
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
@@ -228,7 +275,11 @@ app.use((err, req, res, next) => {
 });
 
 // 서버 시작
-app.listen(PORT, '0.0.0.0', () => { // 👈 0.0.0.0 추가
+const server = app.listen(PORT, '0.0.0.0', () => { // 💡 수정: app.listen 결과를 server 변수에 할당
     console.log(`🚀 백엔드 서버가 http://0.0.0.0:${PORT} 에서 구동 중입니다.`);
-    console.log(`앱에서 접속할 주소: http://${process.env.IP_ADDRESS || '172.20.10.2'}:${PORT}`); 
+    // 환경에 따라 실제 IP 주소는 달라질 수 있습니다.
+    console.log(`💡 앱에서 AI 분석을 위해 접속할 주소: http://localhost:${PORT}/api/analyze-dream`); 
 });
+
+// 서버 타임아웃 설정을 제거했습니다.
+// server.setTimeout(30000);

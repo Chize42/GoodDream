@@ -65,10 +65,14 @@ import BubbleScreen from "./src/screens/bubble/BubbleScreen";
 import Dismiss from "./src/screens/startsleeping/Dismiss";
 import Play from "./src/screens/startsleeping/Play";
 
+
 //auth context 관련 코드 임포트
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { CommonActions } from "@react-navigation/native";
 import { SyncProvider } from "./src/contexts/SyncContext";
+import DreamInputScreen from "./src/screens/DreamInputScreen";
+
+
 
 // FCM 토큰 저장 키
 const FCM_TOKEN_KEY = "fcm_token";
@@ -155,7 +159,15 @@ function MainStack() {
         component={AdminLoginScreen}
         options={{ headerShown: false }}
       />
+
+
+      <Stack.Screen 
+        name="DreamInput" 
+        component={DreamInputScreen} 
+        options={{ headerShown: false }} 
+      />
     </Stack.Navigator>
+    
   );
 }
 
