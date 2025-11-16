@@ -64,7 +64,7 @@ const DreamInputScreen = () => {
     ).start();
   }, []);
 
-  // 버튼 떠다니는 효과 (useNativeDriver: false)
+  // 버튼 떠다니는 효과
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -125,13 +125,13 @@ const DreamInputScreen = () => {
   const getSentimentStyle = (status: string): TextStyle => {
     switch (status) {
       case '긍정적':
-        return { color: '#E6D5F5', fontWeight: 'bold' }; // 파스텔 보라
+        return { color: '#E6D5F5', fontWeight: 'bold' };
       case '부정적':
       case '혼란':
-        return { color: '#F5D5E6', fontWeight: 'bold' }; // 파스텔 핑크
+        return { color: '#F5D5E6', fontWeight: 'bold' };
       case '중립적':
       default:
-        return { color: '#D5E6F5', fontWeight: '600' }; // 파스텔 블루
+        return { color: '#D5E6F5', fontWeight: '600' };
     }
   };
 
@@ -159,18 +159,70 @@ const DreamInputScreen = () => {
           sentimentStatus = '긍정적';
           keywords = ['행복', '즐거움', '편안함', '밝음', '성공', '소원성취'];
           score = Math.min(0.9, length / 50); 
+      } else if (text.includes('사랑') || text.includes('따뜻') || text.includes('포근') || text.includes('안정')) {
+          sentimentStatus = '긍정적';
+          keywords = ['사랑', '따뜻함', '포근함', '안정감', '평온', '만족'];
+          score = Math.min(0.85, length / 50);
+      } else if (text.includes('성공') || text.includes('승리') || text.includes('달성') || text.includes('이룸')) {
+          sentimentStatus = '긍정적';
+          keywords = ['성공', '승리', '달성', '자신감', '성취감', '영광'];
+          score = Math.min(0.88, length / 50);
+      } else if (text.includes('웃음') || text.includes('재미') || text.includes('유쾌') || text.includes('신남')) {
+          sentimentStatus = '긍정적';
+          keywords = ['웃음', '재미', '유쾌함', '신남', '활기', '즐거움'];
+          score = Math.min(0.87, length / 50);
+      } else if (text.includes('희망') || text.includes('기대') || text.includes('설렘') || text.includes('꿈')) {
+          sentimentStatus = '긍정적';
+          keywords = ['희망', '기대', '설렘', '미래', '가능성', '꿈'];
+          score = Math.min(0.82, length / 50);
       } else if (text.includes('무서') || text.includes('슬퍼') || text.includes('두려') || text.includes('추격') || text.includes('악몽') || text.includes('힘들') || text.includes('식은땀') || text.includes('울음')) {
           sentimentStatus = '부정적';
           keywords = ['불안', '두려움', '스트레스', '악몽', '식은땀', '피로', '고통', '슬픔', '울음'];
           score = Math.max(-0.8, -length / 50); 
+      } else if (text.includes('외로') || text.includes('쓸쓸') || text.includes('고독') || text.includes('혼자')) {
+          sentimentStatus = '부정적';
+          keywords = ['외로움', '쓸쓸함', '고독', '고립', '소외', '공허'];
+          score = Math.max(-0.75, -length / 50);
+      } else if (text.includes('분노') || text.includes('화남') || text.includes('짜증') || text.includes('억울')) {
+          sentimentStatus = '부정적';
+          keywords = ['분노', '화', '짜증', '억울함', '불만', '분함'];
+          score = Math.max(-0.78, -length / 50);
+      } else if (text.includes('실패') || text.includes('좌절') || text.includes('포기') || text.includes('낙담')) {
+          sentimentStatus = '부정적';
+          keywords = ['실패', '좌절', '포기', '낙담', '절망', '무력감'];
+          score = Math.max(-0.82, -length / 50);
+      } else if (text.includes('후회') || text.includes('미안') || text.includes('죄책') || text.includes('죄송')) {
+          sentimentStatus = '부정적';
+          keywords = ['후회', '미안함', '죄책감', '자책', '반성', '아쉬움'];
+          score = Math.max(-0.7, -length / 50);
+      } else if (text.includes('어둠') || text.includes('암흑') || text.includes('캄캄') || text.includes('공포')) {
+          sentimentStatus = '부정적';
+          keywords = ['어둠', '암흑', '공포', '두려움', '불안', '막막함'];
+          score = Math.max(-0.85, -length / 50);
       } else if (text.includes('평화') || text.includes('잔잔') || text.includes('익숙') || text.includes('고요')) {
           sentimentStatus = '중립적';
           keywords = ['일상', '잔잔함', '평화', '기억', '고요', '안정'];
           score = Math.min(0.2, length / 100); 
+      } else if (text.includes('일상') || text.includes('평범') || text.includes('보통') || text.includes('무난')) {
+          sentimentStatus = '중립적';
+          keywords = ['일상', '평범', '보통', '일반적', '무난', '규칙'];
+          score = 0.1;
+      } else if (text.includes('반복') || text.includes('루틴') || text.includes('습관') || text.includes('패턴')) {
+          sentimentStatus = '중립적';
+          keywords = ['반복', '루틴', '습관', '패턴', '일상', '규칙적'];
+          score = 0.05;
       } else if (text.includes('이상') || text.includes('혼란') || text.includes('복잡') || text.includes('의문')) {
           sentimentStatus = '혼란'; 
           keywords = ['미스터리', '혼란', '복잡', '질문', '정체불명'];
           score = 0.05; 
+      } else if (text.includes('기묘') || text.includes('신기') || text.includes('특이') || text.includes('독특')) {
+          sentimentStatus = '혼란';
+          keywords = ['기묘함', '신기함', '특이함', '독특함', '이상함', '신비'];
+          score = 0.03;
+      } else if (text.includes('모호') || text.includes('애매') || text.includes('불분명') || text.includes('알쏭')) {
+          sentimentStatus = '혼란';
+          keywords = ['모호함', '애매함', '불분명', '알쏭달쏭', '의문', '미지'];
+          score = 0.02;
       } else {
           score = 0.1;
       }
@@ -201,7 +253,6 @@ const DreamInputScreen = () => {
     try {
       const result = mockAnalyze(dreamText);
       
-      // 프로그레스 바 애니메이션
       Animated.timing(progressAnim, {
         toValue: 1,
         duration: 3000,
@@ -212,7 +263,6 @@ const DreamInputScreen = () => {
       await new Promise(resolve => setTimeout(resolve, 3000)); 
       setAnalysisResult(result);
       
-      // 결과 나타날 때 애니메이션
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -264,28 +314,31 @@ const DreamInputScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* 상단 헤더 */}
         <View style={styles.headerContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={normalizeSize(24)} color="#D5C4E6" />
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="chevron-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>꿈 일기 AI 분석</Text>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>꿈 일기 AI 분석</Text>
+          </View>
+          <View style={styles.headerSpacer} />
         </View>
 
-        {/* 서브헤더 */}
         <View style={styles.subheaderContainer}>
           <Ionicons name="moon" size={normalizeSize(14)} color="#D5C4E6" />
           <Text style={styles.subheader}>꿈의 감정과 핵심 키워드를 추출해요</Text>
         </View>
 
-        {/* 글자 수 카운터 */}
         <View style={styles.charCountContainer}>
           <Text style={styles.charCount}>
             {dreamText.length} / 최소 10자
           </Text>
         </View>
 
-        {/* 입력 필드 */}
         <TextInput
           style={styles.input}
           multiline
@@ -296,7 +349,6 @@ const DreamInputScreen = () => {
           editable={!isLoading}
         />
 
-        {/* 분석 버튼 */}
         <Animated.View 
           style={[
             styles.analyzeButton, 
@@ -319,7 +371,6 @@ const DreamInputScreen = () => {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* 로딩 프로그레스 바 */}
         {isLoading && (
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
@@ -329,7 +380,6 @@ const DreamInputScreen = () => {
           </View>
         )}
         
-        {/* 에러 메시지 */}
         {error ? (
           <View style={styles.errorBox}>
             <Ionicons name="warning" size={normalizeSize(20)} color="#E6D5A8" />
@@ -337,7 +387,6 @@ const DreamInputScreen = () => {
           </View>
         ) : null}
 
-        {/* 분석 결과 */}
         {analysisResult && (
           <Animated.View 
             style={[
@@ -348,13 +397,11 @@ const DreamInputScreen = () => {
               }
             ]}
           >
-            {/* 결과 타이틀 */}
             <View style={styles.resultTitleContainer}>
               <Ionicons name="moon" size={normalizeSize(20)} color="#E6D5A8" />
               <Text style={styles.resultTitle}>꿈의 분석 결과</Text>
             </View>
             
-            {/* 감정 상태 */}
             <View style={styles.resultRow}>
               <View style={styles.labelContainer}>
                 <Ionicons 
@@ -371,7 +418,6 @@ const DreamInputScreen = () => {
               </View>
             </View>
 
-            {/* 감정 점수 프로그레스 바 */}
             <View style={styles.scoreContainer}>
               <View style={styles.scoreHeader}>
                 <Text style={styles.label}>감정 점수</Text>
@@ -390,7 +436,6 @@ const DreamInputScreen = () => {
               </View>
             </View>
 
-            {/* 핵심 키워드 */}
             <View style={styles.keywordsSection}>
               <View style={styles.keywordHeader}>
                 <Ionicons name="pricetags" size={normalizeSize(16)} color="#D5C4E6" />
@@ -437,52 +482,10 @@ const DreamInputScreen = () => {
   );
 };
 
-interface ComponentStyles {
-  safeArea: ViewStyle;
-  container: ViewStyle;
-  headerContainer: ViewStyle;
-  backButton: ViewStyle;
-  headerTitle: TextStyle;
-  subheaderContainer: ViewStyle;
-  subheader: TextStyle;
-  charCountContainer: ViewStyle;
-  charCount: TextStyle;
-  input: TextStyle | ViewStyle; 
-  analyzeButton: ViewStyle;
-  analyzeButtonInner: ViewStyle;
-  analyzeButtonText: TextStyle; 
-  disabledButton: ViewStyle; 
-  progressContainer: ViewStyle;
-  progressBar: ViewStyle;
-  progressFill: ViewStyle;
-  statusMessage: ViewStyle;
-  errorBox: ViewStyle;
-  errorText: TextStyle;
-  resultBox: ViewStyle;
-  resultTitleContainer: ViewStyle;
-  resultTitle: TextStyle;
-  resultRow: ViewStyle;
-  labelContainer: ViewStyle;
-  label: TextStyle;
-  sentimentBadge: ViewStyle;
-  scoreContainer: ViewStyle;
-  scoreHeader: ViewStyle;
-  scoreText: TextStyle;
-  scoreBarContainer: ViewStyle;
-  scoreBarFill: ViewStyle;
-  keywordsSection: ViewStyle;
-  keywordHeader: ViewStyle;
-  keywordsTitle: TextStyle;
-  tagContainer: ViewStyle;
-  tag: ViewStyle; 
-  tagText: TextStyle; 
-  resultText: TextStyle;
-}
-
-const styles = StyleSheet.create<ComponentStyles>({ 
+const styles = StyleSheet.create({ 
   safeArea: {
     flex: 1,
-    backgroundColor: '#1A1A2E', // 부드러운 다크 네이비
+    backgroundColor: '#1A1A2E',
   },
   container: {
     padding: normalizeSize(20),
@@ -499,20 +502,27 @@ const styles = StyleSheet.create<ComponentStyles>({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: normalizeSize(20),
-    paddingTop: normalizeSize(40),
-    paddingBottom: normalizeSize(10),
+    paddingVertical: normalizeSize(16),
+    paddingTop: normalizeSize(50),
     backgroundColor: '#1A1A2E', 
     zIndex: 10,
-    justifyContent: 'flex-start',
   },
   backButton: {
-    padding: normalizeSize(5),
+    width: 80,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: normalizeSize(24),
-    fontWeight: '800', 
-    color: '#ffffffff', 
-    marginLeft: normalizeSize(15),
+    fontSize: normalizeSize(18),
+    fontWeight: '600',
+    color: '#fff',
+  },
+  headerSpacer: {
+    width: 80,
   },
   subheaderContainer: {
     flexDirection: 'row',
@@ -540,7 +550,7 @@ const styles = StyleSheet.create<ComponentStyles>({
   input: {
     width: '100%',
     height: normalizeSize(180),
-    backgroundColor: '#252540', // 부드러운 다크 블루
+    backgroundColor: '#252540',
     borderRadius: normalizeSize(25),
     padding: normalizeSize(20),
     fontSize: normalizeSize(16),
@@ -558,7 +568,7 @@ const styles = StyleSheet.create<ComponentStyles>({
     width: '100%',
     paddingVertical: normalizeSize(18),
     borderRadius: normalizeSize(25),
-    backgroundColor: '#E6D5A8', // 파스텔 옐로우
+    backgroundColor: '#E6D5A8',
     shadowColor: '#E6D5A8',
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
