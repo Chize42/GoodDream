@@ -322,7 +322,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
             style={styles.dreamAICardIllustration}
           />
           <View style={styles.challengeTexts}>
-            <Text style={[styles.dreamAITitle, styles.AI_TEXT_COLOR]}>꿈 속 마음 읽기</Text>
+            <Text style={[styles.dreamAITitle, styles.AI_TEXT_COLOR]}>꿈 속{'\n'}마음 읽기</Text>
             <Text style={[styles.dreamAISubtitle, styles.AI_TEXT_COLOR]}>AI ANALYSIS</Text>
           </View>
         </TouchableOpacity>
@@ -581,15 +581,13 @@ const styles = StyleSheet.create({
     width: normalizeSize(77),
     height: normalizeSize(77),
   },
-  dreamAICardIllustration: { // 💡 챌린지 올빼미와 비슷하게 배치되도록 스타일 조정
+  dreamAICardIllustration: {
     width: normalizeSize(77),
     height: normalizeSize(77),
-    position: "absolute", // 챌린지 박스와 유사한 방식으로 배치
-    left: normalizeSize(10),
-    top: normalizeSize(10),
   },
   challengeTexts: {
     flex: 1,
+    justifyContent: "center",
   },
   challengeTitle: {
     fontSize: normalizeSize(20),
@@ -608,14 +606,14 @@ const styles = StyleSheet.create({
   dreamAITitle: {
     fontSize: normalizeSize(20),
     fontWeight: "bold",
-    textAlign: "right",
+    color: '#3F414E',
     right: normalizeSize(25),
   },
   dreamAISubtitle: {
     fontSize: normalizeSize(11),
     marginTop: normalizeSize(10),
     fontWeight: "bold",
-    textAlign: "right",
+    color: '#3F414E',
     right: normalizeSize(25),
   },
   startSleepingBtn: {
