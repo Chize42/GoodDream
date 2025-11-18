@@ -1,101 +1,150 @@
 // src/components/SleepStageChart.js
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
 import Svg, { Rect, Text as SvgText, Line } from "react-native-svg";
 import { colors, typography } from "../styles/globalStyles";
 
 const SleepStageChart = ({ sleepData }) => {
-  const chartWidth = 320;
+  // 👇 화면 너비 가져오기
+  const screenWidth = Dimensions.get("window").width;
+
+  // 👇 반응형 차트 너비 계산 (패딩 고려)
+  const chartWidth = Math.min(screenWidth - 40, 800); // 최대 800px, 최소 양쪽 20px 패딩
   const chartHeight = 160;
   const padding = { top: 20, right: 40, bottom: 30, left: 60 };
 
-  // 수면 데이터가 없거나 모든 값이 0인 경우 처리
-  if (
-    !sleepData ||
-    (!sleepData.deep && !sleepData.light && !sleepData.rem && !sleepData.awake)
-  ) {
+  // 수면 데이터가 없거나 stages가 없는 경우 처리
+  if (!sleepData || !sleepData.stages || sleepData.stages.length === 0) {
     return (
       <View style={styles.noDataContainer}>
         <Text style={styles.noDataText}>수면 단계 데이터가 없습니다</Text>
       </View>
     );
   }
+
   // 수면 단계 정의
   const sleepStages = [
-    { key: "awake", label: "깸", color: "#FFFFFF" }, // 흰색으로 변경
+    { key: "awake", label: "깸", color: "#FFFFFF" },
     { key: "light", label: "얕은잠", color: colors.blue },
     { key: "deep", label: "깊은잠", color: colors.purple },
     { key: "rem", label: "렘수면", color: colors.indigo },
   ];
 
-  // 시간 레이블 (20시부터 20시까지)
-  const timeLabels = [
-    { hour: 0, label: "8pm" },
-    { hour: 3, label: "11pm" },
-    { hour: 6, label: "2am" },
-    { hour: 9, label: "5am" },
-    { hour: 12, label: "8am" },
-    { hour: 15, label: "11am" },
-    { hour: 18, label: "2pm" },
-    { hour: 21, label: "5pm" },
-    { hour: 24, label: "8pm" },
-  ];
+  // Health Connect stage 숫자 코드를 문자열로 매핑
+  const mapStageToString = (stageCode) => {
+    switch (stageCode) {
+      case 5:
+        return "deep";
+      case 4:
+        return "light";
+      case 6:
+        return "rem";
+      case 1:
+      case 7:
+        return "awake";
+      case 2:
+      case 8:
+        return "light";
+      default:
+        return "light";
+    }
+  };
 
-  // 가상의 수면 패턴 데이터 생성 (실제로는 props나 API에서 받아올 데이터)
-  const generateSleepPattern = () => {
+  // 실제 수면 패턴 데이터 생성
+  const generateRealSleepPattern = () => {
     const pattern = [];
-    const totalHours = 24;
-    const segmentsPerHour = 4; // 15분 단위
 
-    // 수면 시간 설정 (예: 22:30 ~ 07:00)
-    const sleepStartHour = 2.5; // 22:30 (20시 기준으로 2.5시간 후)
-    const sleepEndHour = 11; // 07:00 (20시 기준으로 11시간 후)
+    const bedTime = sleepData.bedTimeISO || sleepData.bedTime;
+    const wakeTime = sleepData.wakeTimeISO || sleepData.wakeTime;
 
-    for (let i = 0; i < totalHours * segmentsPerHour; i++) {
-      const hourFromStart = i / segmentsPerHour;
+    const bedDate = new Date(bedTime);
+    const wakeDate = new Date(wakeTime);
+
+    let chartStartTime = new Date(bedDate);
+    chartStartTime.setHours(chartStartTime.getHours() - 2);
+    chartStartTime.setMinutes(0);
+    chartStartTime.setSeconds(0);
+
+    let chartEndTime = new Date(wakeDate);
+    chartEndTime.setHours(chartEndTime.getHours() + 2);
+    chartEndTime.setMinutes(0);
+    chartEndTime.setSeconds(0);
+
+    const totalChartDuration = chartEndTime - chartStartTime;
+    const segmentDuration = 15 * 60 * 1000;
+    const totalSegments = Math.ceil(totalChartDuration / segmentDuration);
+
+    for (let i = 0; i < totalSegments; i++) {
+      const segmentStart = new Date(
+        chartStartTime.getTime() + i * segmentDuration
+      );
+      const segmentEnd = new Date(segmentStart.getTime() + segmentDuration);
+      const segmentMiddle = new Date(
+        (segmentStart.getTime() + segmentEnd.getTime()) / 2
+      );
 
       let stage = "awake";
 
-      // 수면 시간대인 경우
-      if (hourFromStart >= sleepStartHour && hourFromStart <= sleepEndHour) {
-        const sleepProgress =
-          (hourFromStart - sleepStartHour) / (sleepEndHour - sleepStartHour);
+      for (const stageData of sleepData.stages) {
+        const stageStart = new Date(stageData.startTime);
+        const stageEnd = new Date(stageData.endTime);
 
-        // 수면 패턴 시뮬레이션
-        if (sleepProgress < 0.1 || sleepProgress > 0.9) {
-          // 잠들기 시작과 깨어나기 전: 얕은잠
-          stage = "light";
-        } else if (sleepProgress < 0.3) {
-          // 초기: 깊은잠
-          stage = Math.random() > 0.3 ? "deep" : "light";
-        } else if (sleepProgress < 0.7) {
-          // 중간: 렘수면과 깊은잠이 섞임
-          const rand = Math.random();
-          if (rand < 0.4) stage = "rem";
-          else if (rand < 0.7) stage = "deep";
-          else stage = "light";
-        } else {
-          // 후반: 주로 렘수면과 얕은잠
-          stage = Math.random() > 0.4 ? "rem" : "light";
+        if (segmentMiddle >= stageStart && segmentMiddle < stageEnd) {
+          stage = mapStageToString(stageData.stage);
+          break;
         }
       }
 
+      const hoursFromStart = (segmentStart - chartStartTime) / (1000 * 60 * 60);
+
       pattern.push({
-        hour: hourFromStart,
+        hour: hoursFromStart,
         stage: stage,
         segmentIndex: i,
+        timestamp: segmentStart,
       });
     }
 
-    return pattern;
+    return {
+      pattern,
+      totalHours: totalChartDuration / (1000 * 60 * 60),
+      chartStartTime,
+    };
   };
 
-  const sleepPattern = generateSleepPattern();
+  const {
+    pattern: sleepPattern,
+    totalHours,
+    chartStartTime,
+  } = generateRealSleepPattern();
+
+  // 시간 레이블 생성 (실제 시간 기반)
+  const generateTimeLabels = () => {
+    const labels = [];
+    const labelInterval = Math.ceil(totalHours / 8);
+
+    for (let i = 0; i <= Math.ceil(totalHours); i += labelInterval) {
+      const labelTime = new Date(chartStartTime.getTime() + i * 60 * 60 * 1000);
+      const hours = labelTime.getHours();
+      const period = hours >= 12 ? "pm" : "am";
+      const displayHours = hours % 12 || 12;
+
+      labels.push({
+        hour: i,
+        label: `${displayHours}${period}`,
+      });
+    }
+
+    return labels;
+  };
+
+  const timeLabels = generateTimeLabels();
 
   // 차트 내 좌표 계산
   const getXPosition = (hour) => {
     return (
-      padding.left + (hour / 24) * (chartWidth - padding.left - padding.right)
+      padding.left +
+      (hour / totalHours) * (chartWidth - padding.left - padding.right)
     );
   };
 
@@ -110,7 +159,8 @@ const SleepStageChart = ({ sleepData }) => {
   };
 
   // 세그먼트 너비 계산
-  const segmentWidth = (chartWidth - padding.left - padding.right) / (24 * 4);
+  const segmentWidth =
+    (chartWidth - padding.left - padding.right) / sleepPattern.length;
 
   return (
     <View style={styles.container}>
@@ -160,9 +210,9 @@ const SleepStageChart = ({ sleepData }) => {
               width={segmentWidth}
               height={stageHeight}
               fill={stageColor}
-              stroke={isAwake ? colors.textMuted : "none"} // 깸 단계에만 테두리
+              stroke={isAwake ? colors.textMuted : "none"}
               strokeWidth={isAwake ? 0.5 : 0}
-              opacity={isAwake ? 1 : 0.8} // 깸 단계는 완전 불투명
+              opacity={isAwake ? 1 : 0.8}
             />
           );
         })}
@@ -220,6 +270,7 @@ const SleepStageChart = ({ sleepData }) => {
 const styles = StyleSheet.create({
   container: {
     paddingTop: 16,
+    alignItems: "center", // 👈 차트 중앙 정렬
   },
   legendContainer: {
     flexDirection: "row",

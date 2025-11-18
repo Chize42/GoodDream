@@ -214,6 +214,22 @@ export const syncHealthConnectData = async (userId, startDate, endDate) => {
       if (remHours > 0) result.rem = remHours;
       if (awakeHours > 0) result.awake = awakeHours;
 
+      // 👇 stages 배열 추가! (실제 시간대별 수면 단계 데이터)
+      if (
+        session.stages &&
+        Array.isArray(session.stages) &&
+        session.stages.length > 0
+      ) {
+        result.stages = session.stages.map((stage) => ({
+          startTime: stage.startTime,
+          endTime: stage.endTime,
+          stage: stage.stage,
+        }));
+        console.log(
+          `✅ ${dateStr}: stages 배열 추가 (${result.stages.length}개)`
+        );
+      }
+
       console.log(`✅ ${dateStr} 최종 데이터:`, result);
 
       return result;

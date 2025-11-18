@@ -11,6 +11,7 @@ import {
   StatusBar,
   Image,
   Dimensions,
+  Animated,
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -34,6 +35,8 @@ export default function BubbleScreen({ navigation }) {
         top: screenHeight / 2 - 175,
         left: screenWidth / 2 - 125,
       },
+      scale: new Animated.Value(1),
+      opacity: new Animated.Value(1),
     },
   ]);
 
@@ -88,6 +91,8 @@ export default function BubbleScreen({ navigation }) {
         text: inputText,
         size: newSize,
         position: { top: randomTop, left: randomLeft },
+        scale: new Animated.Value(0),
+        opacity: new Animated.Value(1),
       };
       attempts++;
     } while (isOverlapping(newBubble, targetBubbles) && attempts < maxAttempts);
@@ -106,14 +111,63 @@ export default function BubbleScreen({ navigation }) {
       });
     }
 
+    // 생성 애니메이션 - 통통 튀면서 나타남
+    Animated.spring(newBubble.scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+
     setModalVisible(false);
     setInputText("");
   };
 
-  const handlePopBubble = (idToRemove) => {
-    setBubbles((prevBubbles) =>
-      prevBubbles.filter((bubble) => bubble.id !== idToRemove)
-    );
+  const handlePressIn = (bubble) => {
+    Animated.spring(bubble.scale, {
+      toValue: 1.1,
+      friction: 5,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = (bubble) => {
+    Animated.spring(bubble.scale, {
+      toValue: 1,
+      friction: 5,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePopBubble = (bubble) => {
+    // 살짝 커졌다가 작아지면서 투명해지기
+    Animated.sequence([
+      // 살짝 커지기
+      Animated.timing(bubble.scale, {
+        toValue: 1.15,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      // 작아지면서 동시에 투명해지기
+      Animated.parallel([
+        Animated.timing(bubble.scale, {
+          toValue: 0.2,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bubble.opacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      setBubbles((prevBubbles) =>
+        prevBubbles.filter((b) => b.id !== bubble.id)
+      );
+    });
   };
 
   return (
@@ -125,12 +179,8 @@ export default function BubbleScreen({ navigation }) {
         </TouchableOpacity>
       </View>
       {bubbles.map((bubble) => (
-        <TouchableOpacity
+        <Animated.View
           key={bubble.id}
-          activeOpacity={0.8}
-          onPress={() => handlePopBubble(bubble.id)}
-          onLongPress={() => setIsBlurred(true)}
-          onPressOut={() => setIsBlurred(false)}
           style={[
             styles.bubbleWrapper,
             {
@@ -138,17 +188,27 @@ export default function BubbleScreen({ navigation }) {
               left: bubble.position.left,
               width: bubble.size,
               height: bubble.size,
+              transform: [{ scale: bubble.scale }],
+              opacity: bubble.opacity,
             },
           ]}
         >
-          <ImageBackground
-            source={BUBBLE_IMAGE_URL}
-            style={styles.bubbleImage}
-            resizeMode="contain"
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPressIn={() => handlePressIn(bubble)}
+            onPressOut={() => handlePressOut(bubble)}
+            onPress={() => handlePopBubble(bubble)}
+            style={{ width: "100%", height: "100%" }}
           >
-            <Text style={styles.bubbleText}>{bubble.text}</Text>
-          </ImageBackground>
-        </TouchableOpacity>
+            <ImageBackground
+              source={BUBBLE_IMAGE_URL}
+              style={styles.bubbleImage}
+              resizeMode="contain"
+            >
+              <Text style={styles.bubbleText}>{bubble.text}</Text>
+            </ImageBackground>
+          </TouchableOpacity>
+        </Animated.View>
       ))}
 
       <View style={styles.bottomButtonContainer}>
