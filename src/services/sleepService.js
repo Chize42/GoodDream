@@ -55,6 +55,16 @@ export const saveSleepData = async (userId, sleepData) => {
       dataToSave.awake = sleepData.awake;
     }
 
+    // 👇 stages 배열 추가! (시간대별 상세 수면 단계 데이터)
+    if (
+      sleepData.stages &&
+      Array.isArray(sleepData.stages) &&
+      sleepData.stages.length > 0
+    ) {
+      dataToSave.stages = sleepData.stages;
+      console.log(`✅ stages 배열 저장: ${sleepData.stages.length}개`);
+    }
+
     // 👇 수면 점수 계산
     const score = calculateSleepScore(sleepData);
     dataToSave.score = score;
